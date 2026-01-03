@@ -1,0 +1,7 @@
+# requirements.txt
+
+streamlit
+pandas
+supabase
+python-dotenv
+openpyxl
