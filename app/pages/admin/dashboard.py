@@ -53,11 +53,13 @@ def show():
             }).execute()
             
             top_products_resp = supabase.rpc("get_top_selling_products", {
-                "store_input": selected_store, "start_date": start_date.isoformat(),
-                "end_date": (end_date + datetime.timedelta(days=1)).isoformat(), "limit_count": 10
+                "end_date": (end_date + datetime.timedelta(days=1)).isoformat(),
+                "limit_count": 10,
+                "start_date": start_date.isoformat(),
+                "store_input": selected_store
             }).execute()
             slow_products_resp = supabase.rpc("get_slow_moving_products", {
-                "store_input": selected_store, "days_threshold": 60, "limit_count": 10
+                "store_input": selected_store, "days_threshold": 60
             }).execute()
 
             kpis = kpis_resp.data

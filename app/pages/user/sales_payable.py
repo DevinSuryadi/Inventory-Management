@@ -45,18 +45,43 @@ def show():
                             st.write(f"**Sudah Dibayar:** Rp {row['paid_amount']:,.0f}")
                             st.write(f"**Deskripsi:** {row['sale_description'] or '-'}")
                             
+                            # Fetch detail produk yang terjual dalam transaksi ini
+                            try:
+                                sale_details = supabase.table("sale").select(
+                                    "product(productname, type), quantity, price"
+                                ).eq("saleid", row['debtid']).execute()
+                                
+                                if sale_details.data:
+                                    st.markdown("---")
+                                    st.write("**Produk yang Terjual:**")
+                                    for item in sale_details.data:
+                                        product = item.get('product')
+                                        if isinstance(product, list) and len(product) > 0:
+                                            product_name = product[0].get('productname', 'Produk tidak ditemukan')
+                                            product_type = product[0].get('type', '-')
+                                        else:
+                                            product_name = 'Produk tidak ditemukan'
+                                            product_type = '-'
+                                        qty = item.get('quantity', 0)
+                                        price = item.get('price', 0)
+                                        st.write(f"- {product_name} ({product_type}): {qty} unit @ Rp {price:,.0f} = Rp {qty * price:,.0f}")
+                            except Exception as e:
+                                st.warning("Produk detail tidak tersedia")
+                            
+                            st.markdown("---")
+                            
                             with st.form(f"payment_form_customer_{row['debtid']}"):
                                 st.write("**Form Pembayaran**")
 
                                 # Input Tanggal dan Waktu
                                 col_tgl, col_jam = st.columns(2)
                                 with col_tgl:
-                                    payment_date = st.date_input("Tanggal Bayar", value=datetime.date.today())
+                                    payment_date = st.date_input("Tanggal Bayar", value=datetime.date.today(), key=f"pay_date_{row['debtid']}_1")
                                 with col_jam:
-                                    payment_time = st.time_input("Waktu Bayar", value=datetime.datetime.now().time())
+                                    payment_time = st.time_input("Waktu Bayar", value=datetime.datetime.now().time(), key=f"pay_time_{row['debtid']}_1")
 
-                                payment_amount = st.number_input("Jumlah Pembayaran (Rp)", min_value=0, max_value=int(sisa_piutang), step=1000, format="%d")
-                                payment_note = st.text_area("Catatan Pembayaran", value="Pembayaran piutang pelanggan")
+                                payment_amount = st.number_input("Jumlah Pembayaran (Rp)", min_value=0, max_value=int(sisa_piutang), step=1000, format="%d", key=f"pay_amt_{row['debtid']}_1")
+                                payment_note = st.text_area("Catatan Pembayaran", value="Pembayaran piutang pelanggan", key=f"pay_note_{row['debtid']}_1")
                                 
                                 if st.form_submit_button("Terima Pembayaran"):
                                     payment_datetime = datetime.datetime.combine(payment_date, payment_time)
@@ -64,7 +89,7 @@ def show():
                                         "p_debtid": row['debtid'],
                                         "p_amount": payment_amount,
                                         "p_note": payment_note,
-                                        "p_transaction_date": payment_datetime.isoformat() # Kirim tanggal manual
+                                        "p_transaction_date": payment_datetime.isoformat()
                                     }).execute()
                                     st.success("Pembayaran berhasil dicatat!")
                                     st.rerun()
@@ -107,21 +132,25 @@ def show():
                             
                             # Fetch detail produk yang terjual dalam transaksi ini
                             try:
-                                sale_details = supabase.table("sales").select(
-                                    "product(productname), quantity, harga_satuan"
-                                ).eq("debtid", row['debtid']).execute()
+                                sale_details = supabase.table("sale").select(
+                                    "product(productname, type), quantity"
+                                ).eq("saleid", row['debtid']).execute()
                                 
                                 if sale_details.data:
                                     st.markdown("---")
                                     st.write("**Produk yang Terjual:**")
                                     for item in sale_details.data:
-                                        product_name = item['product'][0]['productname'] if item['product'] else "Produk tidak ditemukan"
-                                        qty = item['quantity']
-                                        price = item['harga_satuan']
-                                        total = qty * price
-                                        st.write(f"- {product_name}: {qty} unit @ Rp {price:,.0f} = Rp {total:,.0f}")
+                                        product = item.get('product')
+                                        if isinstance(product, list) and len(product) > 0:
+                                            product_name = product[0].get('productname', 'Produk tidak ditemukan')
+                                            product_type = product[0].get('type', '-')
+                                        else:
+                                            product_name = 'Produk tidak ditemukan'
+                                            product_type = '-'
+                                        qty = item.get('quantity', 0)
+                                        st.write(f"- {product_name} ({product_type}): {qty} unit")
                             except Exception as e:
-                                st.warning(f"Tidak dapat memuat detail produk: {str(e)}")
+                                pass  # Silently skip if sale data not available
                             
                             st.markdown("---")
                             st.write("**Detail Pelunasan (Cicilan):**")

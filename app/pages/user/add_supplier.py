@@ -32,10 +32,17 @@ def show():
                     "description": description
                 }
                 
-                supabase.table("supplier").insert(data_to_insert).execute()
-
-
-                st.success(f"Supplier '{supplier_name}' berhasil ditambahkan.")
+                response = supabase.table("supplier").insert(data_to_insert).execute()
+                
+                if response.data:
+                    st.success(f"Supplier '{supplier_name}' berhasil ditambahkan.")
+                    st.rerun()
+                else:
+                    st.error("Gagal menambahkan supplier. Silakan coba lagi.")
 
             except Exception as e:
-                st.error(f"Terjadi kesalahan: {e}")
+                error_str = str(e)
+                if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
+                    st.error(f"Supplier '{supplier_name}' sudah terdaftar. Gunakan nama lain.")
+                else:
+                    st.error(f"Terjadi kesalahan: {error_str}")

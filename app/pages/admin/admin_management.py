@@ -1,16 +1,17 @@
 import streamlit as st
 from app.db import get_client
 from app.auth import change_password, reset_password_admin
+from app.pages.admin import staff_management
 import pandas as pd
 import datetime
 
 def show():
-    st.title("Manajemen Toko & User")
+    st.title("Manajemen Toko & Pegawai")
     
     supabase = get_client()
     admin_user = st.session_state.get("username")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["Manajemen Toko", "Manajemen User", "Keamanan", "Laporan"])
+    tab1, tab2, tab3 = st.tabs(["Manajemen Toko", "Manajemen Pegawai", "Keamanan"])
     
     # Manajemen Toko
     with tab1:
@@ -48,72 +49,64 @@ def show():
         # Add Toko
         with toko_tab2:
             st.subheader("Daftarkan Toko Baru")
+            st.info("Toko adalah user dengan role 'pegawai' yang dapat login ke aplikasi. Admin mendaftar toko dengan nama dan password.")
             with st.form("add_store_form"):
-                store_name = st.text_input("Nama Toko*", placeholder="Contoh: Toko Keramik Kota")
-                store_address = st.text_area("Alamat Toko", placeholder="Jalan, RT/RW, Kota...")
-                store_phone = st.text_input("Nomor Telepon", placeholder="08xx-xxxx-xxxx")
-                manager_name = st.text_input("Nama Manager/Pemilik", placeholder="Nama manajer toko")
-                manager_username = st.text_input("Username Manager (akan dibuat akun pegawai)", placeholder="username_manager")
+                store_name = st.text_input("Nama Toko (Username)*", placeholder="Contoh: toko_keramik_kota")
+                store_display_name = st.text_input("Nama Tampilan Toko*", placeholder="Contoh: Toko Keramik Kota")
+                password = st.text_input("Password (min 6 karakter)*", type="password")
+                confirm_password = st.text_input("Konfirmasi Password*", type="password")
                 
-                col1, col2 = st.columns(2)
-                with col1:
-                    initial_password = st.text_input("Password Awal (min 6 char)", type="password")
-                with col2:
-                    confirm_password = st.text_input("Konfirmasi Password", type="password")
-                
-                submitted = st.form_submit_button("Buat Toko & Akun Manager", use_container_width=True, type="primary")
+                submitted = st.form_submit_button("Daftarkan Toko", use_container_width=True, type="primary")
                 
                 if submitted:
                     # Validasi
-                    if not store_name.strip():
-                        st.error("Nama toko harus diisi!")
+                    if not store_name.strip() or not store_display_name.strip():
+                        st.error("Nama toko dan nama tampilan harus diisi!")
                         st.stop()
                     
-                    if not manager_username.strip():
-                        st.error("Username manager harus diisi!")
-                        st.stop()
-                    
-                    if len(initial_password) < 6:
+                    if len(password) < 6:
                         st.error("Password minimal 6 karakter!")
                         st.stop()
                     
-                    if initial_password != confirm_password:
+                    if password != confirm_password:
                         st.error("Password tidak cocok!")
                         st.stop()
                     
                     try:
                         from werkzeug.security import generate_password_hash
                         
-                        # Cek duplikasi toko
-                        check_store = supabase.table("users").select("*").eq("store", store_name).execute()
-                        if check_store.data:
-                            st.error(f"Toko '{store_name}' sudah ada!")
-                            st.stop()
-                        
                         # Cek duplikasi username
-                        check_user = supabase.table("users").select("*").eq("username", manager_username).execute()
+                        check_user = supabase.table("users").select("*").eq("username", store_name).execute()
                         if check_user.data:
-                            st.error(f"Username '{manager_username}' sudah ada!")
+                            st.error(f"Username '{store_name}' sudah ada!")
                             st.stop()
                         
                         # Hash password
-                        hashed_password = generate_password_hash(initial_password, method='pbkdf2:sha256')
+                        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
                         
-                        # Buat user baru (manager/pegawai)
+                        # Buat user toko (role='pegawai', store=store_display_name)
                         new_user = {
-                            "username": manager_username,
+                            "username": store_name,
                             "password": hashed_password,
                             "role": "pegawai",
-                            "store": store_name,
-                            "full_name": manager_name
+                            "store": store_display_name
                         }
-                        supabase.table("users").insert(new_user).execute()
                         
-                        st.success(f"Toko '{store_name}' berhasil dibuat dengan manager '{manager_username}'!")
-                        st.rerun()
+                        response = supabase.table("users").insert(new_user).execute()
+                        if response.data:
+                            st.success(f"Toko '{store_display_name}' berhasil dibuat dengan username '{store_name}'!")
+                            st.rerun()
+                        else:
+                            st.error("Gagal membuat toko. Silakan coba lagi.")
                     
                     except Exception as e:
-                        st.error(f"Error: {e}")
+                        error_str = str(e)
+                        if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
+                            st.error(f"Username '{store_name}' sudah terdaftar di sistem. Gunakan username lain.")
+                        elif "user_id" in error_str:
+                            st.error("Error: Gagal generate ID pengguna. Silakan hubungi administrator.")
+                        else:
+                            st.error(f"Gagal membuat toko: {error_str}")
         
         # Edit Toko
         with toko_tab3:
@@ -131,10 +124,19 @@ def show():
                         
                         if submitted:
                             if new_store_name != selected_store:
-                                # Update semua user dengan store lama ke store baru
-                                supabase.table("users").update({"store": new_store_name}).eq("store", selected_store).execute()
-                                st.success(f"Nama toko berhasil diubah dari '{selected_store}' ke '{new_store_name}'!")
-                                st.rerun()
+                                try:
+                                    response = supabase.table("users").update({"store": new_store_name}).eq("store", selected_store).execute()
+                                    if response.data:
+                                        st.success(f"Nama toko berhasil diubah dari '{selected_store}' ke '{new_store_name}'!")
+                                        st.rerun()
+                                    else:
+                                        st.error("Gagal mengupdate nama toko. Silakan coba lagi.")
+                                except Exception as e:
+                                    error_str = str(e)
+                                    if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
+                                        st.error(f"Nama toko '{new_store_name}' sudah ada. Gunakan nama lain.")
+                                    else:
+                                        st.error(f"Error: {error_str}")
                             else:
                                 st.info("Tidak ada perubahan data.")
                 else:
@@ -142,126 +144,10 @@ def show():
             except Exception as e:
                 st.error(f"Error: {e}")
 
-    # Manajemen User
+    # Manajemen Pegawai
     with tab2:
-        st.header("Kelola User & Staff")
-        
-        user_tab1, user_tab2, user_tab3 = st.tabs(["Lihat User", "Tambah User",  "Nonaktifkan User"])
-        
-        # View User
-        with user_tab1:
-            st.subheader("Daftar User Sistem")
-            try:
-                users = supabase.table("users").select("username, role, store, created_at").order("role", desc=True).execute()
-                if users.data:
-                    user_list = []
-                    for user in users.data:
-                        user_list.append({
-                                "Username": user['username'],
-                                "Role": user['role'].replace('admin', 'Admin').replace('pegawai', 'Pegawai'),
-                                "Toko": user['store'] or "-",
-                                "Status": "Aktif"
-                            })
-                    df = pd.DataFrame(user_list)
-                    st.dataframe(df, use_container_width=True, hide_index=True)
-                else:
-                    st.info("Tidak ada user.")
-            except Exception as e:
-                st.error(f"Error: {e}")
-        
-        # Add User
-        with user_tab2:
-            st.subheader("Tambah User Baru")
-            with st.form("add_user_form"):
-                username = st.text_input("Username*", placeholder="username")
-                full_name = st.text_input("Nama Lengkap", placeholder="Nama user")
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    role = st.selectbox("Role", ["pegawai", "admin"])
-                with col2:
-                    if role == "pegawai":
-                        users_resp = supabase.table("users").select("store").neq("role", "admin").execute()
-                        stores = sorted(list(set([u['store'] for u in users_resp.data if u['store']])))
-                        selected_store = st.selectbox("Pilih Toko", options=stores if stores else [""])
-                    else:
-                        selected_store = None
-                
-                col3, col4 = st.columns(2)
-                with col3:
-                    password = st.text_input("Password (min 6 char)", type="password")
-                with col4:
-                    confirm_pass = st.text_input("Konfirmasi Password", type="password")
-                
-                submitted = st.form_submit_button("Buat User", use_container_width=True, type="primary")
-                
-                if submitted:
-                    if not username.strip():
-                        st.error("Username harus diisi!")
-                        st.stop()
-                    
-                    if len(password) < 6:
-                        st.error("Password minimal 6 karakter!")
-                        st.stop()
-                    
-                    if password != confirm_pass:
-                        st.error("Password tidak cocok!")
-                        st.stop()
-                    
-                    if role == "pegawai" and not selected_store:
-                        st.error("Pilih toko untuk staff!")
-                        st.stop()
-                    
-                    try:
-                        from werkzeug.security import generate_password_hash
-                        
-                        # Cek duplikasi
-                        check = supabase.table("users").select("*").eq("username", username).execute()
-                        if check.data:
-                            st.error(f"Username '{username}' sudah ada!")
-                            st.stop()
-                        
-                        hashed = generate_password_hash(password, method='pbkdf2:sha256')
-                        
-                        new_user = {
-                            "username": username,
-                            "password": hashed,
-                            "role": role,
-                            "store": selected_store if role == "pegawai" else None,
-                            "full_name": full_name
-                        }
-                        supabase.table("users").insert(new_user).execute()
-                        
-                        st.success(f"User '{username}' berhasil dibuat!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-        
-        # User Deactivation
-        with user_tab3:
-            st.subheader("Nonaktifkan User")
-            st.warning("Fitur ini akan menghapus akun user dari sistem.")
-            
-            try:
-                users = supabase.table("users").select("username, role").execute()
-                if users.data:
-                    usernames = [u['username'] for u in users.data if u['role'] != 'admin']
-                    
-                    if usernames:
-                        selected_user = st.selectbox("Pilih User untuk Dihapus", options=usernames)
-                        
-                        if st.button("Hapus User", use_container_width=True, type="primary"):
-                            if st.checkbox(f"Saya yakin ingin menghapus '{selected_user}'"):
-                                try:
-                                    supabase.table("users").delete().eq("username", selected_user).execute()
-                                    st.success(f"User '{selected_user}' berhasil dihapus!")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"Error: {e}")
-                    else:
-                        st.info("Tidak ada staff yang bisa dihapus.")
-            except Exception as e:
-                st.error(f"Error: {e}")
+        st.header("Kelola Pegawai per Toko")
+        staff_management.show()
     
     # Security Management
     with tab3:
@@ -316,32 +202,3 @@ def show():
                                         st.rerun()
             except Exception as e:
                 st.error(f"Error: {e}")
-    
-    # Reports
-    with tab4:
-        st.header("Laporan Sistem")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        try:
-            # Total Toko
-            users_resp = supabase.table("users").select("store").neq("role", "admin").execute()
-            total_stores = len(set([u['store'] for u in users_resp.data if u['store']]))
-            col1.metric("Total Toko", total_stores)
-            
-            # Total User
-            all_users = supabase.table("users").select("*", count='exact').execute()
-            col2.metric("Total User", all_users.count)
-            
-            # Total Admin
-            admins = supabase.table("users").select("*", count='exact').eq("role", "admin").execute()
-            col3.metric("Total Admin", admins.count)
-            
-            st.divider()
-            
-            # Aktivitas Login
-            st.subheader("Statistik Sistem")
-            st.info("Fitur logging tersedia untuk melacak aktivitas user. Cek logs/ folder untuk detail.")
-            
-        except Exception as e:
-            st.error(f"Error: {e}")

@@ -115,14 +115,23 @@ def change_password(username: str, old_password: str, new_password: str) -> bool
         hashed_new = hash_password(new_password)
         
         # Update password
-        supabase.table("users").update({"password": hashed_new}).eq("username", username).execute()
+        response = supabase.table("users").update({"password": hashed_new}).eq("username", username).execute()
         
-        logger.info(f"Password changed for user: {username}")
-        st.success("Password berhasil diubah!")
-        return True
+        if response.data:
+            logger.info(f"Password changed for user: {username}")
+            st.success("Password berhasil diubah!")
+            return True
+        else:
+            st.error("Gagal mengubah password. Silakan coba lagi.")
+            return False
         
     except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
+        error_str = str(e)
+        if "not found" in error_str.lower() or "no rows" in error_str.lower():
+            st.error("User tidak ditemukan.")
+        else:
+            st.error(f"Terjadi kesalahan: {error_str}")
+        return False
         logger.error(f"Change password error: {e}")
         return False
 
@@ -139,15 +148,24 @@ def reset_password_admin(username: str, new_password: str) -> bool:
     try:
         supabase = get_client()
         hashed_password = hash_password(new_password)
-        supabase.table("users").update({"password": hashed_password}).eq("username", username).execute()
+        response = supabase.table("users").update({"password": hashed_password}).eq("username", username).execute()
         
-        logger.info(f"Admin reset password for user: {username}")
-        st.success(f"Password user '{username}' berhasil direset!")
-        return True
+        if response.data:
+            logger.info(f"Admin reset password for user: {username}")
+            st.success(f"Password user '{username}' berhasil direset!")
+            return True
+        else:
+            st.error(f"User '{username}' tidak ditemukan.")
+            return False
         
     except Exception as e:
-        st.error(f"Gagal mereset password: {e}")
+        error_str = str(e)
+        if "not found" in error_str.lower() or "no rows" in error_str.lower():
+            st.error(f"User '{username}' tidak ditemukan.")
+        else:
+            st.error(f"Gagal mereset password: {error_str}")
         logger.error(f"Admin reset password error: {e}")
+        return False
         return False
 
 # MIGRATION FUNCTION - Hanya jalankan SEKALI untuk hash existing passwords
@@ -171,9 +189,15 @@ def migrate_passwords_to_hash():
             if not password.startswith('pbkdf2:'):
                 # Hash password
                 hashed = hash_password(password)
-                supabase.table("users").update({"password": hashed}).eq("user_id", user['user_id']).execute()
-                updated_count += 1
-                print(f"Migrated: {user['username']}")
+                try:
+                    response = supabase.table("users").update({"password": hashed}).eq("user_id", user['user_id']).execute()
+                    if response.data:
+                        updated_count += 1
+                        print(f"Migrated: {user['username']}")
+                    else:
+                        print(f"Failed to migrate: {user['username']}")
+                except Exception as e:
+                    print(f"Error migrating {user['username']}: {e}")
         
         print(f"✓ Migration completed! {updated_count} users updated.")
         
