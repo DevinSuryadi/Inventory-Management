@@ -5,10 +5,6 @@ import re
 from typing import Any, Optional
 
 def validate_product_name(name: str) -> tuple[bool, str]:
-    """
-    Validasi nama produk.
-    Return: (is_valid, error_message)
-    """
     if not name or not name.strip():
         return False, "Nama produk tidak boleh kosong atau hanya spasi."
     
@@ -44,10 +40,6 @@ def validate_warehouse_name(name: str) -> tuple[bool, str]:
     return True, ""
 
 def validate_phone_number(phone: str) -> tuple[bool, str]:
-    """
-    Validasi nomor telepon Indonesia.
-    Format: 08xx-xxxx-xxxx atau +62 8xx-xxxx-xxxx
-    """
     if not phone or not phone.strip():
         return True, ""  # Phone bersifat optional
     
@@ -98,10 +90,6 @@ def validate_email(email: str) -> tuple[bool, str]:
     return True, ""
 
 def validate_password(password: str) -> tuple[bool, str]:
-    """
-    Validasi password.
-    Minimum 2 karakter, harus ada huruf dan angka.
-    """
     if len(password) < 2:
         return False, "Password minimal 2 karakter."
     
