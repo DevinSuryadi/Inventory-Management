@@ -13,9 +13,9 @@ def show():
 
     supabase = get_client()
 
-    tab1, tab2 = st.tabs(["💳 Piutang Aktif", "📜 Riwayat Piutang Lunas"])
+    tab1, tab2 = st.tabs(["Piutang Aktif", "Riwayat Piutang Lunas"])
 
-    # --- TAB 1: PIUTANG AKTIF ---
+    # Piutang Aktif 
     with tab1:
         st.header("Daftar Piutang yang Belum Lunas")
         try:
@@ -55,7 +55,7 @@ def show():
                                 with col_jam:
                                     payment_time = st.time_input("Waktu Bayar", value=datetime.datetime.now().time())
 
-                                payment_amount = st.number_input("Jumlah Pembayaran", min_value=0.01, max_value=float(sisa_piutang), step=1000.0)
+                                payment_amount = st.number_input("Jumlah Pembayaran (Rp)", min_value=0, max_value=int(sisa_piutang), step=1000, format="%d")
                                 payment_note = st.text_area("Catatan Pembayaran", value="Pembayaran piutang pelanggan")
                                 
                                 if st.form_submit_button("Terima Pembayaran"):
@@ -82,7 +82,7 @@ def show():
         except Exception as e:
             st.error(f"Terjadi kesalahan saat memuat piutang aktif: {e}")
 
-    # --- TAB 2: RIWAYAT PIUTANG LUNAS ---
+    # Riwayat Piutang Lunas
     with tab2:
         st.header("Riwayat Piutang yang Telah Lunas")
         try:
@@ -104,6 +104,25 @@ def show():
                             st.write(f"**ID Piutang:** {row['debtid']}")
                             st.write(f"**Tanggal Transaksi:** {pd.to_datetime(row['debt_date']).strftime('%d %B %Y')}")
                             st.write(f"**Deskripsi:** {row['sale_description'] or '-'}")
+                            
+                            # Fetch detail produk yang terjual dalam transaksi ini
+                            try:
+                                sale_details = supabase.table("sales").select(
+                                    "product(productname), quantity, harga_satuan"
+                                ).eq("debtid", row['debtid']).execute()
+                                
+                                if sale_details.data:
+                                    st.markdown("---")
+                                    st.write("**Produk yang Terjual:**")
+                                    for item in sale_details.data:
+                                        product_name = item['product'][0]['productname'] if item['product'] else "Produk tidak ditemukan"
+                                        qty = item['quantity']
+                                        price = item['harga_satuan']
+                                        total = qty * price
+                                        st.write(f"- {product_name}: {qty} unit @ Rp {price:,.0f} = Rp {total:,.0f}")
+                            except Exception as e:
+                                st.warning(f"Tidak dapat memuat detail produk: {str(e)}")
+                            
                             st.markdown("---")
                             st.write("**Detail Pelunasan (Cicilan):**")
                             st.text(row['payment_history_details'] or 'Tidak ada detail pembayaran tercatat.')

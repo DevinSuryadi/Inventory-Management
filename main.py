@@ -1,9 +1,9 @@
 import streamlit as st
-# Mengimpor semua modul yang dibutuhkan
 from app.auth import login, logout
 from app.pages.admin import dashboard as admin_dashboard
 from app.pages.admin import finance_management 
 from app.pages.admin import cashflow_history
+from app.pages.admin import admin_management
 from app.pages.user import (
     view_stock, register_stock, stock_adjustment, adjustment_history,
     purchase, purchase_history, sale, sales_history, sales_payable,
@@ -12,14 +12,43 @@ from app.pages.user import (
     import_stock
 )
 
-# Konfigurasi Halaman
 st.set_page_config(
     page_title="Sistem Inventaris Toko",
-    page_icon="📦",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# --- Inisialisasi Session State ---
+try:
+    with open("app/styles.css", "r", encoding="utf-8") as css_file:
+        st.markdown(f"<style>{css_file.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    st.markdown("""
+    <style>
+        .main { padding: 2rem; }
+        .stButton>button {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 5rem auto;
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid #e0e0e0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .sidebar-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 def init_session_state():
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
@@ -27,90 +56,137 @@ def init_session_state():
         st.session_state.role = ""
         st.session_state.store = ""
 
-# --- Struktur Menu User ---
+# Struktur Menu User
 USER_PAGES = {
-    "📦 Product Management": {
-        "View Stock": view_stock.show,
-        "Register Stock": register_stock.show,
-        "Stock Adjustment": stock_adjustment.show,
-        "Adjustment History": adjustment_history.show,
-        "Import Stock (Excel)": import_stock.show,
+    "Manajemen Produk": {
+        "Lihat Stok": view_stock.show,
+        "Daftarkan Produk": register_stock.show,
+        "Sesuaikan Stok": stock_adjustment.show,
+        "Riwayat Penyesuaian": adjustment_history.show,
+        "Impor dari Excel": import_stock.show,
     },
-    "🛒 Transaction": {
-        "Purchase": purchase.show,
-        "Purchase History": purchase_history.show,
-        "Sale": sale.show,
-        "Sales History": sales_history.show,
-        "Sales Payable": sales_payable.show,
+    "Transaksi": {
+        "Pembelian": purchase.show,
+        "Riwayat Pembelian": purchase_history.show,
+        "Penjualan": sale.show,
+        "Riwayat Penjualan": sales_history.show,
+        "Piutang Pelanggan": sales_payable.show,
     },
-    "👥 Supplier": {
-        "View Supplier": view_supplier.show,
-        "Add Supplier": add_supplier.show,
-        "Supplier Debt": supplier_debt.show,
+    "Supplier": {
+        "Lihat Supplier": view_supplier.show,
+        "Tambah Supplier": add_supplier.show,
+        "Utang Supplier": supplier_debt.show,
     },
-    "🏠 Warehouse": {
-        "View Warehouse": view_warehouse.show,
-        "Register Warehouse": register_warehouse.show,
+    "Gudang": {
+        "Lihat Gudang": view_warehouse.show,
+        "Daftarkan Gudang": register_warehouse.show,
     }
 }
 
-# --- Fungsi Utama Aplikasi ---
+# Fungsi Login Screen 
+def login_screen():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("<h1 style='text-align: center; color: #1f77b4;'>Inventory System</h1>", unsafe_allow_html=True)
+
+        with st.container():
+            st.markdown("---")
+            col_a, col_b = st.columns([1, 1], gap="small")
+
+            with col_a:
+                username = st.text_input("Username", key="login_username")
+            with col_b:
+                password = st.text_input("Password", type="password", key="login_password")
+
+            st.markdown("")
+            col_btn1, col_btn2, col_btn3 = st.columns(3)
+
+            with col_btn2:
+                if st.button("Login", use_container_width=True, type="primary"):
+                    if login(username, password):
+                        st.success("Login berhasil!")
+                        st.rerun()
+
 def main():
     init_session_state()
 
     if not st.session_state.logged_in:
-        with st.container():
-            st.title("Login Sistem Inventaris")
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            if st.button("Login", use_container_width=True):
-                if login(username, password):
-                    st.success("Login berhasil!")
-                    st.rerun()
+        login_screen()
     else:
-        st.sidebar.markdown(f"Selamat datang, **{st.session_state.username}**!")
+        # Header Sidebar
+        with st.sidebar:
+            st.markdown(f"### Pengguna: {st.session_state.username}")
+            role_display = ""
+            if st.session_state.role == 'pegawai':
+                role_display = 'Pegawai'
+            elif st.session_state.role == 'admin':
+                role_display = 'Admin'
+            else:
+                role_display = st.session_state.role
+            st.markdown(f"**Role:** {role_display}")
+            if st.session_state.role == 'pegawai':
+                st.markdown(f"**Toko:** {st.session_state.store}")
+            st.divider()
         
         if st.session_state.role == 'admin':
-            # PENYEMPURNAAN: Membuat menu navigasi untuk admin
-            st.sidebar.title("Menu Admin")
-            st.sidebar.markdown(f"Peran: **Admin Pusat**")
-            st.sidebar.divider()
-            
-            admin_menu = st.sidebar.radio(
-                "Navigasi Admin", 
-                ["📊 Analytics Dashboard", "💰 Manajemen Keuangan", "📜 Riwayat Arus Kas"]
-            )
-            
-            st.sidebar.divider()
-            if st.sidebar.button("Logout", use_container_width=True):
-                logout()
-                st.rerun()
+            # Admin Menu
+            with st.sidebar:
+                st.markdown("### Menu Admin", help="Manajemen sistem dan toko")
+                admin_menu = st.radio(
+                    "Pilih Menu",
+                    ["Dashboard Analisis", "Keuangan", "Laporan Kas", "Manajemen Toko & User"],
+                    label_visibility="collapsed"
+                )
 
-            # Menampilkan halaman sesuai pilihan menu admin
-            if admin_menu == "📊 Analytics Dashboard":
-                admin_dashboard.show()
-            elif admin_menu == "💰 Manajemen Keuangan":
-                finance_management.show()
-            elif admin_menu == "📜 Riwayat Arus Kas":
-                cashflow_history.show()
+                # Header admin
+                col_title, col_logout = st.columns([8, 1])
+                with col_title:
+                    st.markdown("## Admin Pusat Dashboard")
+                with col_logout:
+                    if st.button("Logout", help="Logout", key="admin_logout"):
+                        logout()
+                        st.rerun()
+
+                if admin_menu == "Dashboard Analisis":
+                    admin_dashboard.show()
+                elif admin_menu == "Keuangan":
+                    finance_management.show()
+                elif admin_menu == "Laporan Kas":
+                    cashflow_history.show()
+                elif admin_menu == "Manajemen Toko & User":
+                    admin_management.show()
         
         elif st.session_state.role == 'pegawai':
-            st.sidebar.title("Menu Navigasi")
-            st.sidebar.markdown(f"Toko: **{st.session_state.store}**")
-            st.sidebar.divider()
+            # Staff Menu
+            with st.sidebar:
+                st.markdown("### Menu Toko", help="Operasional toko")
+                main_menu = st.radio(
+                    "Kategori Menu",
+                    list(USER_PAGES.keys()),
+                    label_visibility="collapsed"
+                )
+                
+                if main_menu in USER_PAGES:
+                    st.markdown("### Sub-Menu")
+                    submenu = st.radio(
+                        "Pilih Halaman",
+                        list(USER_PAGES[main_menu].keys()),
+                        label_visibility="collapsed",
+                        key=f"submenu_{main_menu}"
+                    )
+                    page_function = USER_PAGES[main_menu][submenu]
+
+            # Header halaman staff
+            col_title, col_logout = st.columns([8, 1])
+            with col_title:
+                st.markdown(f"## {st.session_state.store} - {submenu}")
+            with col_logout:
+                if st.button("Logout", help="Logout", key="staff_logout"):
+                    logout()
+                    st.rerun()
             
-            main_menu = st.sidebar.radio("Menu Utama", list(USER_PAGES.keys()))
-            
-            if main_menu in USER_PAGES:
-                submenu_options = list(USER_PAGES[main_menu].keys())
-                submenu = st.sidebar.radio("Sub-Menu", submenu_options, key=f"submenu_{main_menu}")
-                page_function = USER_PAGES[main_menu][submenu]
-                page_function()
-        
-            st.sidebar.divider()
-            if st.sidebar.button("Logout", use_container_width=True):
-                logout()
-                st.rerun()
+            st.divider()
+            page_function()
 
 if __name__ == "__main__":
     main()

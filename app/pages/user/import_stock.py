@@ -14,11 +14,10 @@ def show():
 
     supabase = get_client()
 
-    # --- Bagian 1: Unduh Template ---
+    # Download Template
     st.markdown("---")
     st.subheader("1. Unduh Template Excel")
 
-    # Buat template di memori
     template_df = pd.DataFrame({
         "Nama Produk": ["Contoh: Murano"],
         "Jumlah": [10],
@@ -43,7 +42,7 @@ def show():
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    # --- Bagian 2: Unggah File ---
+    # Upload File
     st.markdown("---")
     st.subheader("2. Unggah File Excel yang Sudah Diisi")
     
@@ -53,7 +52,6 @@ def show():
         try:
             df = pd.read_excel(uploaded_file)
             
-            # Validasi kolom
             required_columns = ["Nama Produk", "Jumlah", "Gudang", "Harga Beli", "Supplier"]
             missing_cols = [col for col in required_columns if col not in df.columns]
             
@@ -61,18 +59,16 @@ def show():
                 st.error(f"File Excel tidak valid. Kolom berikut tidak ditemukan: **{', '.join(missing_cols)}**")
             else:
                 st.success("Preview Data:")
-                st.dataframe(df.head(10)) # Tampilkan 10 baris pertama sebagai pratinjau
+                st.dataframe(df.head(10))
 
-                # --- Bagian 3: Proses Impor ---
+                # Import Process
                 st.markdown("---")
                 st.subheader("3. Mulai Proses Impor")
                 
                 if st.button(f"Impor {len(df)} Produk", use_container_width=True):
-                    # Ubah semua kolom menjadi string untuk dikirim sebagai JSON
                     df_json = df.astype(str).to_json(orient='records')
                     
                     with st.spinner("Proses.."):
-                        # Panggil fungsi RPC di Supabase
                         result = supabase.rpc("bulk_import_products", {
                             "products_json": df_json,
                             "p_store": store
@@ -80,7 +76,6 @@ def show():
                     
                     if "Berhasil" in result.data:
                         st.success(result.data)
-                        st.balloons()
                     else:
                         st.error(f"Terjadi kesalahan saat impor: {result.data}")
 

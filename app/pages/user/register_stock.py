@@ -27,10 +27,8 @@ def show():
                 return
 
             try:
-                # Dapatkan koneksi Supabase
                 supabase = get_client()
 
-                # Buat dictionary data untuk dimasukkan
                 data_to_insert = {
                     "store": store,
                     "productname": product_name,
@@ -41,7 +39,6 @@ def show():
                     "description": description
                 }
                 
-                # Kirim data ke tabel 'product' di Supabase
                 supabase.table("product").insert(data_to_insert).execute()
 
                 st.success(f"Produk '{product_name}' berhasil didaftarkan!")

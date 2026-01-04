@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 
 def show():
-    st.title("💰 Manajemen Keuangan Toko")
+    st.title("Manajemen Keuangan Toko")
     
     supabase = get_client()
     admin_user = st.session_state.get("username")
@@ -38,7 +38,7 @@ def show():
 
         st.markdown("---")
         
-        tab1, tab2, tab3 = st.tabs(["➕ Tambah Rekening Bank", "✏️ Penyesuaian Saldo", "🔄 Transfer Dana"])
+        tab1, tab2, tab3 = st.tabs(["Tambah Rekening Bank", "Penyesuaian Saldo", "Transfer Dana"])
 
         with tab1:
             st.subheader("Daftarkan Rekening Bank Baru")
@@ -66,7 +66,7 @@ def show():
             with st.form("adjust_balance_form"):
                 target_account_label = st.selectbox("Pilih Akun", options=account_map.keys(), key="adj_acc")
                 adj_type = st.radio("Jenis Penyesuaian", ["Pemasukan (Debit)", "Pengeluaran (Kredit)"])
-                amount = st.number_input("Jumlah", min_value=0.01)
+                amount = st.number_input("Jumlah (Rp)", min_value=0, step=1000, format="%d")
                 description = st.text_input("Deskripsi (e.g., Modal Awal, Penarikan Owner)")
                 adj_date = st.date_input("Tanggal", value=datetime.date.today())
                 submitted = st.form_submit_button("Proses Penyesuaian")
@@ -91,7 +91,7 @@ def show():
                 with st.form("transfer_funds_form"):
                     from_account_label = st.selectbox("Dari Akun", options=account_map.keys(), key="from_acc")
                     to_account_label = st.selectbox("Ke Akun", options=account_map.keys(), key="to_acc")
-                    transfer_amount = st.number_input("Jumlah Transfer", min_value=0.01)
+                    transfer_amount = st.number_input("Jumlah Transfer (Rp)", min_value=0, step=1000, format="%d")
                     transfer_desc = st.text_input("Catatan", value="Transfer internal")
                     transfer_date = st.date_input("Tanggal Transfer", value=datetime.date.today())
                     submitted = st.form_submit_button("Proses Transfer")

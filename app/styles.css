@@ -1,0 +1,111 @@
+/* Global professional dark/black theme for the app */
+:root{
+    --bg: #1a1a1a;
+    --bg-secondary: #252525;
+    --text: #f0f0f0;
+    --text-muted: #b0b0b0;
+    --accent: #2e7de9;
+    --border: #404040;
+}
+
+/* Main background */
+body, .reportview-container, .main, .stApp, [data-testid="stAppViewContainer"] {
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+}
+
+/* Text color */
+p, span, div {
+    color: var(--text) !important;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text) !important;
+}
+
+/* Sidebar styling */
+[data-testid="stSidebar"], .css-1d391kg {
+    background-color: var(--bg-secondary) !important;
+}
+
+.sidebar-content {
+    background-color: var(--bg-secondary) !important;
+}
+
+/* Buttons */
+.stButton>button {
+    background-color: var(--accent) !important;
+    color: #fff !important;
+    border: 1px solid var(--accent) !important;
+    padding: 0.6rem 1rem !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+}
+
+.stButton>button:hover {
+    background-color: #2264ba !important;
+    border-color: #2264ba !important;
+}
+
+/* Input fields */
+.stTextInput input, .stNumberInput input, .stSelectbox select, .stTextArea textarea {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+
+.stTextInput input::placeholder, .stNumberInput input::placeholder {
+    color: var(--text-muted) !important;
+}
+
+/* Tables and data */
+.stDataFrame, table {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text) !important;
+}
+
+table tr, table th, table td {
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+/* Dividers and lines */
+hr {
+    border-color: var(--border) !important;
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] button {
+    color: var(--text-muted) !important;
+}
+
+.stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+    color: var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+
+/* Metrics and info boxes */
+.stMetric_container, [data-testid="stMetricContainer"] {
+    background-color: var(--bg-secondary) !important;
+}
+
+/* Radio and checkbox */
+[role="radio"], [role="checkbox"] {
+    color: var(--text) !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg) !important;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border) !important;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted) !important;
+}

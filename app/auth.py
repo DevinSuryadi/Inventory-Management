@@ -1,15 +1,49 @@
-# app/auth.py
+# app/auth_improved.py
+# FILE INI ADALAH IMPROVED VERSION DARI app/auth.py DENGAN PASSWORD HASHING
 
 import streamlit as st
 from app.db import get_client
+from werkzeug.security import check_password_hash, generate_password_hash
+import logging
 
-def login(username, password):
+# Setup logging
+logger = logging.getLogger(__name__)
+
+def hash_password(password: str) -> str:
+    """
+    Hash password menggunakan werkzeug.security
+    Lebih aman dibanding plain text atau md5.
+    """
+    return generate_password_hash(password, method='pbkdf2:sha256')
+
+def verify_password(password: str, hashed: str) -> bool:
+    """
+    Verify password dengan hashed version.
+    """
+    try:
+        return check_password_hash(hashed, password)
+    except Exception as e:
+        logger.error(f"Password verification error: {e}")
+        return False
+
+def login(username: str, password: str) -> bool:
     """
     Memverifikasi kredensial pengguna dan mengatur session state jika berhasil.
-    Mengembalikan True jika login berhasil, False jika gagal.
+    IMPROVEMENT: Menggunakan password hashing untuk keamanan lebih baik.
     """
+    
+    # Validasi input
     if not username or not password:
         st.error("Username dan password harus diisi.")
+        return False
+    
+    # Additional validationx``
+    if len(username) < 3:
+        st.error("Username minimal 3 karakter.")
+        return False
+    
+    if len(password) < 1:
+        st.error("Password minimal 2 karakter.")
         return False
 
     try:
@@ -19,27 +53,129 @@ def login(username, password):
 
         user_data = response.data
         
-        # PERINGATAN KEAMANAN:
-        # Di aplikasi produksi, JANGAN PERNAH membandingkan password secara langsung.
-        # Gunakan library hashing seperti 'bcrypt' atau 'argon2'.
-        # Contoh: if bcrypt.checkpw(password.encode(), user_data['password'].encode()):
-        if user_data and user_data['password'] == password:
+        # Verify password dengan hash
+        if user_data and verify_password(password, user_data['password']):
             # Simpan informasi user ke session state
             st.session_state.logged_in = True
             st.session_state.username = user_data['username']
             st.session_state.role = user_data['role']
             st.session_state.store = user_data['store']
+            
+            # Log successful login
+            logger.info(f"User {username} (role: {user_data['role']}) successfully logged in")
+            
             return True
         else:
             st.error("Username atau password salah.")
+            logger.warning(f"Failed login attempt for username: {username}")
             return False
     
-    except Exception:
+    except Exception as e:
         st.error("Username atau password salah.")
+        logger.error(f"Login error: {e}")
         return False
 
 def logout():
-    """Membersihkan semua session state untuk logout."""
-    keys_to_delete = list(st.session_state.keys())
+    """
+    Membersihkan session state yang relevan untuk logout.
+    IMPROVEMENT: Selective deletion untuk avoid menghapus internal Streamlit keys.
+    """
+    keys_to_delete = ['logged_in', 'username', 'role', 'store']
     for key in keys_to_delete:
-        del st.session_state[key]
+        if key in st.session_state:
+            del st.session_state[key]
+    
+    logger.info("User logged out")
+
+def change_password(username: str, old_password: str, new_password: str) -> bool:
+    """
+    FITUR BARU: Change password dengan verifikasi old password.
+    """
+    
+    # Validasi
+    if len(new_password) < 6:
+        st.error("Password baru minimal 6 karakter.")
+        return False
+    
+    if old_password == new_password:
+        st.error("Password baru tidak boleh sama dengan password lama.")
+        return False
+    
+    try:
+        supabase = get_client()
+        response = supabase.table("users").select("password").eq("username", username).single().execute()
+        user_data = response.data
+        
+        # Verify old password
+        if not verify_password(old_password, user_data['password']):
+            st.error("Password lama tidak sesuai.")
+            return False
+        
+        # Hash new password
+        hashed_new = hash_password(new_password)
+        
+        # Update password
+        supabase.table("users").update({"password": hashed_new}).eq("username", username).execute()
+        
+        logger.info(f"Password changed for user: {username}")
+        st.success("Password berhasil diubah!")
+        return True
+        
+    except Exception as e:
+        st.error(f"Terjadi kesalahan: {e}")
+        logger.error(f"Change password error: {e}")
+        return False
+
+def reset_password_admin(username: str, new_password: str) -> bool:
+    """
+    FITUR BARU: Admin reset password untuk user tertentu.
+    Hanya bisa dipanggil dari admin page.
+    """
+    
+    if len(new_password) < 2:
+        st.error("Password minimal 2 karakter.")
+        return False
+    
+    try:
+        supabase = get_client()
+        hashed_password = hash_password(new_password)
+        supabase.table("users").update({"password": hashed_password}).eq("username", username).execute()
+        
+        logger.info(f"Admin reset password for user: {username}")
+        st.success(f"Password user '{username}' berhasil direset!")
+        return True
+        
+    except Exception as e:
+        st.error(f"Gagal mereset password: {e}")
+        logger.error(f"Admin reset password error: {e}")
+        return False
+
+# MIGRATION FUNCTION - Hanya jalankan SEKALI untuk hash existing passwords
+def migrate_passwords_to_hash():
+    """
+    IMPORTANT: Jalankan ini hanya SEKALI untuk convert existing plain text passwords ke hash.
+    Setelah dijalankan, delete function ini.
+    
+    Usage:
+    python -c "from app.auth_improved import migrate_passwords_to_hash; migrate_passwords_to_hash()"
+    """
+    try:
+        supabase = get_client()
+        users = supabase.table("users").select("user_id, username, password").execute()
+        
+        updated_count = 0
+        for user in users.data:
+            password = user['password']
+            
+            # Cek apakah sudah di-hash (hashed password dimulai dengan 'pbkdf2:')
+            if not password.startswith('pbkdf2:'):
+                # Hash password
+                hashed = hash_password(password)
+                supabase.table("users").update({"password": hashed}).eq("user_id", user['user_id']).execute()
+                updated_count += 1
+                print(f"Migrated: {user['username']}")
+        
+        print(f"✓ Migration completed! {updated_count} users updated.")
+        
+    except Exception as e:
+        print(f"✗ Migration error: {e}")

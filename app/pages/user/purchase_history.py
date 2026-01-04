@@ -40,7 +40,6 @@ def show():
             else:
                 df = pd.DataFrame(results)
                 
-                # Menerapkan filter pencarian setelah data diterima
                 if search_term:
                     term = search_term.lower()
                     df = df[
