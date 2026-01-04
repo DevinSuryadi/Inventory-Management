@@ -4,6 +4,7 @@ from app.pages.admin import dashboard as admin_dashboard
 from app.pages.admin import finance_management 
 from app.pages.admin import cashflow_history
 from app.pages.admin import admin_management
+from app.pages.admin import staff_management
 from app.pages.user import (
     view_stock, register_stock, stock_adjustment, adjustment_history,
     purchase, purchase_history, sale, sales_history, sales_payable,
@@ -134,27 +135,29 @@ def main():
                 st.markdown("### Menu Admin", help="Manajemen sistem dan toko")
                 admin_menu = st.radio(
                     "Pilih Menu",
-                    ["Dashboard Analisis", "Keuangan", "Laporan Kas", "Manajemen Toko & User"],
+                    ["Dashboard Analisis", "Keuangan", "Laporan Kas", "Manajemen Toko", "Manajemen Pegawai"],
                     label_visibility="collapsed"
                 )
 
-                # Header admin
-                col_title, col_logout = st.columns([8, 1])
-                with col_title:
-                    st.markdown("## Admin Pusat Dashboard")
-                with col_logout:
-                    if st.button("Logout", help="Logout", key="admin_logout"):
-                        logout()
-                        st.rerun()
+            # Header admin
+            col_title, col_logout = st.columns([8, 1])
+            with col_title:
+                st.markdown("## Admin Pusat Dashboard")
+            with col_logout:
+                if st.button("Logout", help="Logout", key="admin_logout"):
+                    logout()
+                    st.rerun()
 
-                if admin_menu == "Dashboard Analisis":
-                    admin_dashboard.show()
-                elif admin_menu == "Keuangan":
-                    finance_management.show()
-                elif admin_menu == "Laporan Kas":
-                    cashflow_history.show()
-                elif admin_menu == "Manajemen Toko & User":
-                    admin_management.show()
+            if admin_menu == "Dashboard Analisis":
+                admin_dashboard.show()
+            elif admin_menu == "Keuangan":
+                finance_management.show()
+            elif admin_menu == "Laporan Kas":
+                cashflow_history.show()
+            elif admin_menu == "Manajemen Toko":
+                admin_management.show()
+            elif admin_menu == "Manajemen Pegawai":
+                staff_management.show()
         
         elif st.session_state.role == 'pegawai':
             # Staff Menu

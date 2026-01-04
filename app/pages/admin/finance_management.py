@@ -49,17 +49,25 @@ def show():
                 submitted = st.form_submit_button("Simpan Rekening")
                 if submitted:
                     try:
-                        supabase.table("accounts").insert({
+                        response = supabase.table("accounts").insert({
                             "store": selected_store,
                             "account_name": account_name,
                             "account_type": "bank",
                             "bank_name": bank_name,
                             "account_number": account_number
                         }).execute()
-                        st.success("Rekening bank berhasil ditambahkan!")
-                        st.rerun()
+                        
+                        if response.data:
+                            st.success("Rekening bank berhasil ditambahkan!")
+                            st.rerun()
+                        else:
+                            st.error("Gagal menambahkan rekening. Silakan coba lagi.")
                     except Exception as e:
-                        st.error(f"Gagal menambahkan rekening: {e}")
+                        error_str = str(e)
+                        if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
+                            st.error(f"Rekening '{account_name}' sudah terdaftar di toko ini. Gunakan nama lain.")
+                        else:
+                            st.error(f"Gagal menambahkan rekening: {error_str}")
 
         with tab2:
             st.subheader("Sesuaikan Saldo (Modal Awal / Penarikan)")

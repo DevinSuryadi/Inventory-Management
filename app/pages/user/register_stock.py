@@ -39,9 +39,19 @@ def show():
                     "description": description
                 }
                 
-                supabase.table("product").insert(data_to_insert).execute()
-
-                st.success(f"Produk '{product_name}' berhasil didaftarkan!")
+                response = supabase.table("product").insert(data_to_insert).execute()
+                
+                if response.data:
+                    st.success(f"Produk '{product_name}' berhasil didaftarkan!")
+                    st.rerun()
+                else:
+                    st.error("Gagal mendaftarkan produk. Silakan coba lagi.")
             
             except Exception as e:
-                st.error(f"Terjadi kesalahan saat mendaftarkan produk: {e}")
+                error_str = str(e)
+                if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
+                    st.error(f"Produk '{product_name}' sudah terdaftar di toko ini. Gunakan nama lain.")
+                elif "foreign key" in error_str.lower():
+                    st.error("Toko yang dipilih tidak valid. Silakan coba lagi.")
+                else:
+                    st.error(f"Terjadi kesalahan saat mendaftarkan produk: {error_str}")

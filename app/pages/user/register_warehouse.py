@@ -22,10 +22,17 @@ def show():
                     return
 
                 # Insert data ke tabel 'warehouse_list'
-                supabase.table("warehouse_list").insert({"name": warehouse_name}).execute()
-
-                st.success(f"Gudang '{warehouse_name}' berhasil ditambahkan.")
-                st.rerun()
+                response = supabase.table("warehouse_list").insert({"name": warehouse_name}).execute()
+                
+                if response.data:
+                    st.success(f"Gudang '{warehouse_name}' berhasil ditambahkan.")
+                    st.rerun()
+                else:
+                    st.error("Gagal menambahkan gudang. Silakan coba lagi.")
             
             except Exception as e:
-                st.error(f"Terjadi kesalahan: {e}")
+                error_str = str(e)
+                if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
+                    st.error(f"Nama gudang '{warehouse_name}' sudah terdaftar. Gunakan nama lain.")
+                else:
+                    st.error(f"Terjadi kesalahan: {error_str}")

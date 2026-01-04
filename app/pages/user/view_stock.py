@@ -17,7 +17,7 @@ def show():
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            search_text = st.text_input("Cari nama produk", placeholder="Contoh: Mie Goreng")
+            search_text = st.text_input("Cari nama produk", placeholder="keramik")
         with col2:
             min_stock = st.number_input("Min. Stok", min_value=0, value=0)
         with col3:
@@ -96,8 +96,8 @@ def show():
                 total_stock = df['Total Kuantitas'].sum()
                 st.metric("Total Stok", f"{total_stock} unit")
             with col3:
-                avg_price = df['Harga Rata-rata'].mean()
-                st.metric("Harga Rata-rata", f"Rp {avg_price:,.0f}")
+                num_suppliers = df['Supplier'].nunique()
+                st.metric("Total Supplier", num_suppliers)
             
             st.divider()
             
