@@ -10,16 +10,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 def hash_password(password: str) -> str:
-    """
-    Hash password menggunakan werkzeug.security
-    Lebih aman dibanding plain text atau md5.
-    """
     return generate_password_hash(password, method='pbkdf2:sha256')
 
 def verify_password(password: str, hashed: str) -> bool:
-    """
-    Verify password dengan hashed version.
-    """
+
     try:
         return check_password_hash(hashed, password)
     except Exception as e:
@@ -27,10 +21,6 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 def login(username: str, password: str) -> bool:
-    """
-    Memverifikasi kredensial pengguna dan mengatur session state jika berhasil.
-    IMPROVEMENT: Menggunakan password hashing untuk keamanan lebih baik.
-    """
     
     # Validasi input
     if not username or not password:
@@ -76,10 +66,6 @@ def login(username: str, password: str) -> bool:
         return False
 
 def logout():
-    """
-    Membersihkan session state yang relevan untuk logout.
-    IMPROVEMENT: Selective deletion untuk avoid menghapus internal Streamlit keys.
-    """
     keys_to_delete = ['logged_in', 'username', 'role', 'store']
     for key in keys_to_delete:
         if key in st.session_state:
@@ -88,9 +74,6 @@ def logout():
     logger.info("User logged out")
 
 def change_password(username: str, old_password: str, new_password: str) -> bool:
-    """
-    FITUR BARU: Change password dengan verifikasi old password.
-    """
     
     # Validasi
     if len(new_password) < 6:
@@ -136,10 +119,6 @@ def change_password(username: str, old_password: str, new_password: str) -> bool
         return False
 
 def reset_password_admin(username: str, new_password: str) -> bool:
-    """
-    FITUR BARU: Admin reset password untuk user tertentu.
-    Hanya bisa dipanggil dari admin page.
-    """
     
     if len(new_password) < 2:
         st.error("Password minimal 2 karakter.")
@@ -167,39 +146,3 @@ def reset_password_admin(username: str, new_password: str) -> bool:
         logger.error(f"Admin reset password error: {e}")
         return False
         return False
-
-# MIGRATION FUNCTION - Hanya jalankan SEKALI untuk hash existing passwords
-def migrate_passwords_to_hash():
-    """
-    IMPORTANT: Jalankan ini hanya SEKALI untuk convert existing plain text passwords ke hash.
-    Setelah dijalankan, delete function ini.
-    
-    Usage:
-    python -c "from app.auth_improved import migrate_passwords_to_hash; migrate_passwords_to_hash()"
-    """
-    try:
-        supabase = get_client()
-        users = supabase.table("users").select("user_id, username, password").execute()
-        
-        updated_count = 0
-        for user in users.data:
-            password = user['password']
-            
-            # Cek apakah sudah di-hash (hashed password dimulai dengan 'pbkdf2:')
-            if not password.startswith('pbkdf2:'):
-                # Hash password
-                hashed = hash_password(password)
-                try:
-                    response = supabase.table("users").update({"password": hashed}).eq("user_id", user['user_id']).execute()
-                    if response.data:
-                        updated_count += 1
-                        print(f"Migrated: {user['username']}")
-                    else:
-                        print(f"Failed to migrate: {user['username']}")
-                except Exception as e:
-                    print(f"Error migrating {user['username']}: {e}")
-        
-        print(f"✓ Migration completed! {updated_count} users updated.")
-        
-    except Exception as e:
-        print(f"✗ Migration error: {e}")
