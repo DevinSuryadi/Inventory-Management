@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 
 def show():
-    st.title("📜 Riwayat Arus Kas (Buku Besar)")
+    st.title("Riwayat Arus Kas (Buku Besar)")
     
     supabase = get_client()
 
@@ -49,9 +49,9 @@ def show():
             else:
                 df = pd.DataFrame(history)
                 
-                # Uang Masuk (amount > 0) sekarang adalah DEBIT
+                # Uang Masuk (amount > 0) 
                 df['Debit'] = df['amount'].apply(lambda x: x if x > 0 else None)
-                # Uang Keluar (amount < 0) sekarang adalah KREDIT
+                # Uang Keluar (amount < 0) 
                 df['Kredit'] = df['amount'].apply(lambda x: -x if x < 0 else None)
                 
                 df = df.rename(columns={
@@ -65,7 +65,6 @@ def show():
                 for col in ['Debit', 'Kredit', 'Saldo Akhir']:
                     df[col] = df[col].apply(lambda x: f"Rp {x:,.0f}" if pd.notna(x) else "")
                 
-                # Tampilkan kolom yang sudah diperbaiki
                 st.dataframe(
                     df[['Tanggal', 'Deskripsi', 'Debit', 'Kredit', 'Saldo Akhir']],
                     use_container_width=True,

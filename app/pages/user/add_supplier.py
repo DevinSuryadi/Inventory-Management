@@ -20,13 +20,11 @@ def show():
             try:
                 supabase = get_client()
                 
-                # Cek duplikasi nama supplier
                 check_res = supabase.table("supplier").select("supplierid").eq("suppliername", supplier_name).execute()
                 if check_res.data:
                     st.error(f"Supplier dengan nama '{supplier_name}' sudah ada.")
                     return
 
-                # Insert data baru
                 data_to_insert = {
                     "suppliername": supplier_name,
                     "supplierno": supplier_no,

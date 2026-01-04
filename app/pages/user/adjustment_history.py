@@ -16,7 +16,6 @@ def show():
 
         st.subheader("Filter Riwayat")
         
-        # --- Filter Section ---
         col1, col2 = st.columns(2)
         with col1:
             start_date = st.date_input("Dari Tanggal", value=datetime.date.today() - datetime.timedelta(days=30))
@@ -25,7 +24,7 @@ def show():
         
         search_term = st.text_input("Cari berdasarkan Nama Produk")
 
-        # --- Data Fetching and Display ---
+        # Data Fetching and Display
         if st.button("Tampilkan Riwayat"):
             end_date_param = (end_date + datetime.timedelta(days=1)).isoformat()
             
@@ -42,7 +41,6 @@ def show():
             else:
                 df = pd.DataFrame(results)
                 
-                # Menerapkan filter pencarian setelah data diterima
                 if search_term:
                     df = df[df['productname'].str.contains(search_term, case=False, na=False)]
 

@@ -16,7 +16,6 @@ def show():
             try:
                 supabase = get_client()
                 
-                # Cek duplikasi nama gudang untuk menghindari error
                 check_res = supabase.table("warehouse_list").select("warehouseid", count='exact').eq("name", warehouse_name).execute()
                 if check_res.count > 0:
                     st.error(f"Gudang dengan nama '{warehouse_name}' sudah ada.")
