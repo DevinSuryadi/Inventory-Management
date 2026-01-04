@@ -4,8 +4,7 @@ import pandas as pd
 import io
 
 def show():
-    st.title("📥 Impor Stok Awal dari Excel")
-    st.markdown("Halaman ini digunakan untuk mendaftarkan semua produk dari file Excel.")
+    st.title("Impor Stok Awal dari Excel")
     st.warning("**Catatan:** Hal ini tidak memperbarui produk yang sudah ada.")
 
     store = st.session_state.get("store")
@@ -18,7 +17,6 @@ def show():
     # --- Bagian 1: Unduh Template ---
     st.markdown("---")
     st.subheader("1. Unduh Template Excel")
-    st.write("Isi data produk sesuai dengan format di dalam template ini.")
 
     # Buat template di memori
     template_df = pd.DataFrame({
@@ -39,7 +37,7 @@ def show():
         template_df.to_excel(writer, index=False, sheet_name='Data Produk')
     
     st.download_button(
-        label="📥 Unduh Template (.xlsx)",
+        label="Unduh Template (.xlsx)",
         data=output.getvalue(),
         file_name="template_import_produk.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -60,20 +58,20 @@ def show():
             missing_cols = [col for col in required_columns if col not in df.columns]
             
             if missing_cols:
-                st.error(f"File Excel Anda tidak valid. Kolom berikut tidak ditemukan: **{', '.join(missing_cols)}**")
+                st.error(f"File Excel tidak valid. Kolom berikut tidak ditemukan: **{', '.join(missing_cols)}**")
             else:
-                st.success("File berhasil dibaca. Berikut adalah pratinjau data Anda:")
+                st.success("Preview Data:")
                 st.dataframe(df.head(10)) # Tampilkan 10 baris pertama sebagai pratinjau
 
                 # --- Bagian 3: Proses Impor ---
                 st.markdown("---")
                 st.subheader("3. Mulai Proses Impor")
                 
-                if st.button(f"🚀 Mulai Impor {len(df)} Produk", use_container_width=True):
+                if st.button(f"Impor {len(df)} Produk", use_container_width=True):
                     # Ubah semua kolom menjadi string untuk dikirim sebagai JSON
                     df_json = df.astype(str).to_json(orient='records')
                     
-                    with st.spinner("Sedang memproses... Ini mungkin memakan waktu beberapa saat."):
+                    with st.spinner("Proses.."):
                         # Panggil fungsi RPC di Supabase
                         result = supabase.rpc("bulk_import_products", {
                             "products_json": df_json,
