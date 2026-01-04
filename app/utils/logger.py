@@ -14,7 +14,6 @@ LOGS_DIR.mkdir(exist_ok=True)
 
 # Custom JSON formatter untuk structured logging
 class JSONFormatter(logging.Formatter):
-    """Format log records sebagai JSON untuk easier parsing."""
     
     def format(self, record: logging.LogRecord) -> str:
         log_data = {
@@ -42,17 +41,6 @@ class JSONFormatter(logging.Formatter):
         return json.dumps(log_data, default=str)
 
 def setup_logger(name: str, log_file: Optional[str] = None, level: int = logging.INFO) -> logging.Logger:
-    """
-    Setup logger dengan file dan console handlers.
-    
-    Args:
-        name: Logger name (usually __name__)
-        log_file: Optional log file path (relative to logs/ directory)
-        level: Logging level (default: INFO)
-    
-    Returns:
-        Configured logger instance
-    """
     logger = logging.getLogger(name)
     logger.setLevel(level)
     
