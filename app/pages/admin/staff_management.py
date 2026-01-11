@@ -9,6 +9,10 @@ def show():
     supabase = get_client()
     store = st.session_state.get("store")
     
+    # Initialize form key for reset
+    if "staff_form_key" not in st.session_state:
+        st.session_state.staff_form_key = 0
+    
     tab1, tab2, tab3 = st.tabs(["Lihat Pegawai", "Tambah Pegawai", "Hapus Pegawai"])
     
     # View Staff
@@ -31,7 +35,7 @@ def show():
                         staff_list.append({
                             "ID": staff['pegawai_id'],
                             "Nama": staff['nama'],
-                            "No Telp": staff.get('posisi', '-'),  # Using posisi field for phone number
+                            "No Telp": staff.get('posisi', '-') or '-',
                             "Gaji/Bulan": f"Rp {staff['gaji_bulanan']:,.0f}",
                             "Tgl Pembayaran": f"Tanggal {staff['tanggal_pembayaran']}",
                             "Dibuat": pd.to_datetime(staff['created_at']).strftime('%d/%m/%Y %H:%M')
@@ -56,14 +60,17 @@ def show():
             stores = sorted(list(set([user['store'] for user in users_resp.data if user['store']])))
             
             if stores:
-                with st.form("add_staff_form"):
+                with st.form(f"add_staff_form_{st.session_state.staff_form_key}"):
                     selected_store = st.selectbox("Pilih Toko*", options=stores, key="add_staff_store")
                     
                     col1, col2 = st.columns(2)
                     with col1:
-                        staff_name = st.text_input("Nama Lengkap*", placeholder="Contoh: Ahmad Riyadi")
+                        staff_name = st.text_input("Nama Lengkap*", placeholder="Contoh: ...")
                     with col2:
-                        staff_phone = st.text_input("No Telp*", placeholder="Contoh: 0812345678")
+                        staff_phone = st.text_input("No Telp", placeholder="Contoh: 0812345678")
+                    
+                    st.divider()
+                    st.markdown("##### Informasi Gaji")
                     
                     col3, col4 = st.columns(2)
                     with col3:
@@ -71,11 +78,17 @@ def show():
                     with col4:
                         payment_date = st.number_input("Tanggal Pembayaran (1-31)*", min_value=1, max_value=31, value=1)
                     
-                    submitted = st.form_submit_button("Daftarkan Pegawai", use_container_width=True, type="primary")
+                    st.divider()
+                    confirm_add = st.checkbox("Data pegawai sudah benar")
+                    submitted = st.form_submit_button("➕ Daftarkan Pegawai", use_container_width=True, type="primary")
                     
                     if submitted:
-                        if not staff_name.strip() or not staff_phone.strip():
-                            st.error("Nama dan no telp harus diisi!")
+                        if not confirm_add:
+                            st.error("Harap centang konfirmasi terlebih dahulu!")
+                            st.stop()
+                        
+                        if not staff_name.strip():
+                            st.error("Nama pegawai harus diisi!")
                             st.stop()
                         
                         if staff_salary <= 0:
@@ -85,8 +98,8 @@ def show():
                         try:
                             new_staff = {
                                 "store": selected_store,
-                                "nama": staff_name,
-                                "posisi": staff_phone, 
+                                "nama": staff_name.strip(),
+                                "posisi": staff_phone.strip() if staff_phone.strip() else None, 
                                 "gaji_bulanan": staff_salary,
                                 "tanggal_pembayaran": int(payment_date),
                                 "created_at": datetime.datetime.now().isoformat(),
@@ -94,16 +107,17 @@ def show():
                             }
                             response = supabase.table("pegawai").insert(new_staff).execute()
                             if response.data:
-                                st.success(f"Pegawai '{staff_name}' berhasil ditambahkan!")
+                                st.success(f"✅ Pegawai '{staff_name}' berhasil ditambahkan!")
+                                st.session_state.staff_form_key += 1
                                 st.rerun()
                             else:
                                 st.error("Gagal menambah pegawai. Silakan coba lagi.")
                         except Exception as e:
                             error_str = str(e)
                             if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
-                                st.error(f"Data pegawai sudah ada. Gunakan nama atau data lain.")
+                                st.error(f"Data pegawai sudah ada.")
                             elif "foreign key" in error_str.lower():
-                                st.error("Error: Toko yang dipilih tidak valid. Silakan refresh halaman.")
+                                st.error("Error: Toko yang dipilih tidak valid.")
                             else:
                                 st.error(f"Gagal menambah pegawai: {error_str}")
             else:
@@ -114,7 +128,6 @@ def show():
     # Delete Staff
     with tab3:
         st.subheader("Hapus Pegawai")
-        st.warning("Tindakan ini akan menghapus data pegawai dari sistem.")
         
         try:
             # Get list of stores
@@ -133,23 +146,23 @@ def show():
                     selected_staff_display = st.selectbox("Pilih Pegawai untuk Dihapus", options=list(staff_options.keys()))
                     selected_staff_id = staff_options[selected_staff_display]
                     
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if st.button("Hapus Pegawai", use_container_width=True, type="primary"):
-                            with col2:
-                                confirm = st.checkbox(f"Saya yakin ingin menghapus: {selected_staff_display}")
-                            
-                            if confirm:
-                                try:
-                                    response = supabase.table("pegawai").delete().eq("pegawai_id", selected_staff_id).execute()
-                                    st.success("Pegawai berhasil dihapus!")
-                                    st.rerun()
-                                except Exception as e:
-                                    error_str = str(e)
-                                    if "foreign key" in error_str.lower():
-                                        st.error("Gagal menghapus: Pegawai ini terkait dengan data lain. Hubungi administrator.")
-                                    else:
-                                        st.error(f"Gagal menghapus pegawai: {error_str}")
+                    st.divider()
+                    confirm_delete = st.checkbox(f"Saya yakin ingin menghapus **{selected_staff_display}** secara permanen")
+                    
+                    if st.button("Hapus Pegawai", use_container_width=True, type="secondary", key="delete_staff_btn"):
+                        if not confirm_delete:
+                            st.error("Harap centang konfirmasi terlebih dahulu!")
+                        else:
+                            try:
+                                response = supabase.table("pegawai").delete().eq("pegawai_id", selected_staff_id).execute()
+                                st.success("✅ Pegawai berhasil dihapus!")
+                                st.rerun()
+                            except Exception as e:
+                                error_str = str(e)
+                                if "foreign key" in error_str.lower():
+                                    st.error("Gagal menghapus: Pegawai ini terkait dengan data lain.")
+                                else:
+                                    st.error(f"Gagal menghapus pegawai: {error_str}")
                 else:
                     st.info(f"Belum ada pegawai di toko {selected_store}.")
             else:

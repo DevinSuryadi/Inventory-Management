@@ -1,110 +1,434 @@
-:root{
-    --bg: #1a1a1a;
-    --bg-secondary: #252525;
-    --text: #f0f0f0;
-    --text-muted: #b0b0b0;
-    --accent: #2e7de9;
-    --border: #404040;
+/*   
+ INVENTORY SYSTEM - PROFESSIONAL DARK THEME
+*/
+
+:root {
+    /* Base colors */
+    --bg-primary: #0f1419;
+    --bg-secondary: #1a1f26;
+    --bg-tertiary: #242c36;
+    
+    /* Text colors */
+    --text-primary: #f7f9fc;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    
+    /* Accent colors */
+    --accent-blue: #2563eb;
+    --accent-blue-hover: #1d4ed8;
+    --accent-blue-light: #3b82f6;
+    
+    /* Action colors */
+    --color-success: #10b981;
+    --color-success-hover: #059669;
+    --color-danger: #ef4444;
+    --color-danger-hover: #dc2626;
+    --color-warning: #f59e0b;
+    --color-info: #3b82f6;
+    
+    /* Border & dividers */
+    --border-color: #30363d;
+    --border-light: #21262d;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
 }
 
-/* Main background */
+/*   
+BASE STYLES
+*/
+
 body, .reportview-container, .main, .stApp, [data-testid="stAppViewContainer"] {
-    background-color: var(--bg) !important;
-    color: var(--text) !important;
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
 }
 
-/* Text color */
-p, span, div {
-    color: var(--text) !important;
+p, span, div, label {
+    color: var(--text-primary) !important;
 }
 
-/* Headings */
 h1, h2, h3, h4, h5, h6 {
-    color: var(--text) !important;
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
 }
 
-/* Sidebar styling */
+/*   
+SIDEBAR
+*/
+
 [data-testid="stSidebar"], .css-1d391kg {
     background-color: var(--bg-secondary) !important;
+    border-right: 1px solid var(--border-color) !important;
 }
 
 .sidebar-content {
     background-color: var(--bg-secondary) !important;
 }
 
-/* Buttons */
-.stButton>button {
-    background-color: var(--accent) !important;
-    color: #fff !important;
-    border: 1px solid var(--accent) !important;
-    padding: 0.6rem 1rem !important;
+/*   
+BUTTONS - Professional Color Scheme
+*/
+
+/* Default Button (Blue - Primary Action) */
+.stButton > button {
+    background-color: var(--accent-blue) !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.stButton > button:hover {
+    background-color: var(--accent-blue-hover) !important;
+    box-shadow: var(--shadow-md) !important;
+    transform: translateY(-1px) !important;
+}
+
+.stButton > button:active {
+    transform: translateY(0) !important;
+}
+
+/* Primary Type Button (Blue) */
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="baseButton-primary"] {
+    background-color: var(--accent-blue) !important;
+    color: #ffffff !important;
+}
+
+.stButton > button[kind="primary"]:hover,
+.stButton > button[data-testid="baseButton-primary"]:hover {
+    background-color: var(--accent-blue-hover) !important;
+}
+
+/* Secondary Type Button */
+.stButton > button[kind="secondary"],
+.stButton > button[data-testid="baseButton-secondary"] {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.stButton > button[kind="secondary"]:hover,
+.stButton > button[data-testid="baseButton-secondary"]:hover {
+    background-color: var(--border-color) !important;
+}
+
+/* Form Submit Buttons */
+.stFormSubmitButton > button {
+    background-color: var(--accent-blue) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 8px !important;
+}
+
+.stFormSubmitButton > button:hover {
+    background-color: var(--accent-blue-hover) !important;
+}
+
+/*   
+INPUT FIELDS
+*/
+
+.stTextInput input,
+.stNumberInput input,
+.stTextArea textarea,
+[data-baseweb="input"] input,
+[data-baseweb="textarea"] textarea {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 0.8rem !important;
+}
+
+.stTextInput input:focus,
+.stNumberInput input:focus,
+.stTextArea textarea:focus {
+    border-color: var(--accent-blue) !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+}
+
+.stTextInput input::placeholder,
+.stNumberInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: var(--text-muted) !important;
+}
+
+/* Select boxes */
+.stSelectbox > div > div,
+[data-baseweb="select"] > div {
+    background-color: var(--bg-tertiary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+}
+
+[data-baseweb="select"] > div:focus-within {
+    border-color: var(--accent-blue) !important;
+}
+
+/* Dropdown menu */
+[data-baseweb="popover"] {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+[data-baseweb="menu"] {
+    background-color: var(--bg-secondary) !important;
+}
+
+[role="option"] {
+    color: var(--text-primary) !important;
+}
+
+[role="option"]:hover {
+    background-color: var(--bg-tertiary) !important;
+}
+
+/*   
+TABLES & DATAFRAMES
+*/
+
+.stDataFrame, 
+[data-testid="stDataFrame"],
+.dataframe {
+    background-color: var(--bg-secondary) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+table {
+    background-color: var(--bg-secondary) !important;
+}
+
+table tr {
+    background-color: var(--bg-secondary) !important;
+    border-bottom: 1px solid var(--border-light) !important;
+}
+
+table tr:hover {
+    background-color: var(--bg-tertiary) !important;
+}
+
+table th {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid var(--border-color) !important;
+}
+
+table td {
+    color: var(--text-primary) !important;
+    border-color: var(--border-light) !important;
+}
+
+/*   
+TABS
+*/
+
+.stTabs [data-baseweb="tab-list"] {
+    background-color: var(--bg-secondary) !important;
+    border-radius: 8px !important;
+    padding: 4px !important;
+    gap: 4px !important;
+}
+
+.stTabs [data-baseweb="tab-list"] button {
+    color: var(--text-secondary) !important;
+    background-color: transparent !important;
     border-radius: 6px !important;
+    padding: 8px 16px !important;
     font-weight: 500 !important;
 }
 
-.stButton>button:hover {
-    background-color: #2264ba !important;
-    border-color: #2264ba !important;
-}
-
-/* Input fields */
-.stTextInput input, .stNumberInput input, .stSelectbox select, .stTextArea textarea {
-    background-color: var(--bg-secondary) !important;
-    color: var(--text) !important;
-    border: 1px solid var(--border) !important;
-}
-
-.stTextInput input::placeholder, .stNumberInput input::placeholder {
-    color: var(--text-muted) !important;
-}
-
-/* Tables and data */
-.stDataFrame, table {
-    background-color: var(--bg-secondary) !important;
-    color: var(--text) !important;
-}
-
-table tr, table th, table td {
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-}
-
-/* Dividers and lines */
-hr {
-    border-color: var(--border) !important;
-}
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] button {
-    color: var(--text-muted) !important;
+.stTabs [data-baseweb="tab-list"] button:hover {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
 }
 
 .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-    color: var(--accent) !important;
-    border-color: var(--accent) !important;
+    background-color: var(--accent-blue) !important;
+    color: #ffffff !important;
 }
 
-/* Metrics and info boxes */
-.stMetric_container, [data-testid="stMetricContainer"] {
+/*   
+METRICS
+*/
+
+[data-testid="stMetric"],
+[data-testid="stMetricValue"] {
     background-color: var(--bg-secondary) !important;
 }
 
-/* Radio and checkbox */
-[role="radio"], [role="checkbox"] {
-    color: var(--text) !important;
+[data-testid="stMetricLabel"] {
+    color: var(--text-secondary) !important;
 }
 
-/* Scrollbar */
+[data-testid="stMetricValue"] {
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+}
+
+[data-testid="stMetricDelta"] svg {
+    color: var(--color-success) !important;
+}
+
+/*   
+ALERTS & INFO BOXES
+*/
+
+.stAlert {
+    border-radius: 8px !important;
+    border: none !important;
+}
+
+/*   
+EXPANDERS
+*/
+
+.streamlit-expanderHeader {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    color: var(--text-primary) !important;
+}
+
+.streamlit-expanderHeader:hover {
+    background-color: var(--bg-tertiary) !important;
+}
+
+.streamlit-expanderContent {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-top: none !important;
+    border-radius: 0 0 8px 8px !important;
+}
+
+/*   
+CHECKBOXES & RADIO
+*/
+
+[data-testid="stCheckbox"] label span,
+.stCheckbox label span {
+    color: var(--text-primary) !important;
+}
+
+.stRadio label span,
+[data-testid="stRadio"] label span {
+    color: var(--text-primary) !important;
+}
+
+/*   
+DIVIDERS
+*/
+
+hr, .stDivider {
+    border-color: var(--border-color) !important;
+    margin: 1.5rem 0 !important;
+}
+
+/*   
+FORMS
+*/
+
+[data-testid="stForm"] {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+}
+
+/*   
+SCROLLBAR
+*/
+
 ::-webkit-scrollbar {
     width: 8px;
+    height: 8px;
 }
+
 ::-webkit-scrollbar-track {
-    background: var(--bg) !important;
+    background: var(--bg-primary) !important;
 }
+
 ::-webkit-scrollbar-thumb {
-    background: var(--border) !important;
+    background: var(--border-color) !important;
     border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted) !important;
+}
+
+/*   
+RESPONSIVE ADJUSTMENTS
+*/
+
+@media (max-width: 768px) {
+    .stButton > button {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.85rem !important;
+    }
+    
+    [data-testid="stForm"] {
+        padding: 1rem !important;
+    }
+}
+
+/*   
+DELETE BUTTON STYLING (RED)
+   Secondary buttons are neutral, use custom class for delete
+*/
+
+/* Secondary buttons - neutral gray style */
+.stButton > button[kind="secondary"],
+button[data-testid="baseButton-secondary"] {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.stButton > button[kind="secondary"]:hover,
+button[data-testid="baseButton-secondary"]:hover {
+    background-color: var(--border-color) !important;
+}
+
+/* Success/Green buttons for specific actions */
+.element-container:has(button:contains("Simpan")) .stButton > button,
+.element-container:has(button:contains("Bayar")) .stButton > button {
+    background-color: var(--color-success) !important;
+}
+
+/* Custom Delete Button Container Styling */
+div[data-testid="stVerticalBlock"] > div:has(> div > .stButton > button):has(button:contains("Hapus")),
+div[data-testid="stVerticalBlock"] > div:has(> div > .stButton > button):has(button:contains("Delete")) {
+    --btn-color: var(--color-danger);
+}
+
+/* Status badges styling */
+.stBadge, [data-testid="stBadge"] {
+    border-radius: 12px !important;
+    padding: 2px 8px !important;
+    font-size: 0.75rem !important;
+}
+
+/* Chart styling */
+[data-testid="stVegaLiteChart"],
+[data-testid="stPlotlyChart"] {
+    background-color: var(--bg-secondary) !important;
+    border-radius: 8px !important;
+    padding: 1rem !important;
+}
+
+/* Container/card styling */
+[data-testid="stVerticalBlock"] > div[data-testid="stHorizontalBlock"] {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
 }

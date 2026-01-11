@@ -5,12 +5,14 @@ from app.pages.admin import finance_management
 from app.pages.admin import cashflow_history
 from app.pages.admin import admin_management
 from app.pages.admin import staff_management
+from app.pages.admin import operational_expense as admin_expense
 from app.pages.user import (
     view_stock, register_stock, stock_adjustment, adjustment_history,
     purchase, purchase_history, sale, sales_history, sales_payable,
     view_supplier, add_supplier, supplier_debt,
     view_warehouse, register_warehouse, 
-    import_stock
+    import_stock, 
+    purchase_return, sale_return, return_history
 )
 
 st.set_page_config(
@@ -72,6 +74,11 @@ USER_PAGES = {
         "Penjualan": sale.show,
         "Riwayat Penjualan": sales_history.show,
         "Piutang Pelanggan": sales_payable.show,
+    },
+    "Retur": {
+        "Retur Pembelian": purchase_return.show,
+        "Retur Penjualan": sale_return.show,
+        "Riwayat Retur": return_history.show,
     },
     "Supplier": {
         "Lihat Supplier": view_supplier.show,
@@ -135,7 +142,7 @@ def main():
                 st.markdown("### Menu Admin", help="Manajemen sistem dan toko")
                 admin_menu = st.radio(
                     "Pilih Menu",
-                    ["Dashboard Analisis", "Keuangan", "Laporan Kas", "Manajemen Toko", "Manajemen Pegawai"],
+                    ["Dashboard Analisis", "Keuangan", "Biaya Operasional", "Laporan Kas", "Manajemen Toko", "Manajemen Pegawai"],
                     label_visibility="collapsed"
                 )
 
@@ -152,6 +159,8 @@ def main():
                 admin_dashboard.show()
             elif admin_menu == "Keuangan":
                 finance_management.show()
+            elif admin_menu == "Biaya Operasional":
+                admin_expense.show()
             elif admin_menu == "Laporan Kas":
                 cashflow_history.show()
             elif admin_menu == "Manajemen Toko":

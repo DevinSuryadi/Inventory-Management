@@ -1,6 +1,3 @@
-# app/auth_improved.py
-# FILE INI ADALAH IMPROVED VERSION DARI app/auth.py DENGAN PASSWORD HASHING
-
 import streamlit as st
 from app.db import get_client
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -38,14 +35,12 @@ def login(username: str, password: str) -> bool:
 
     try:
         supabase = get_client()
-        # Cari user berdasarkan username
         response = supabase.table("users").select("*").eq("username", username).single().execute()
 
         user_data = response.data
         
-        # Verify password dengan hash
+        # Verify password hash
         if user_data and verify_password(password, user_data['password']):
-            # Simpan informasi user ke session state
             st.session_state.logged_in = True
             st.session_state.username = user_data['username']
             st.session_state.role = user_data['role']

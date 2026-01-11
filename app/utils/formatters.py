@@ -1,6 +1,3 @@
-# app/utils/formatters.py
-# Utility functions untuk formatting data
-
 from datetime import datetime, date
 from typing import Union
 
