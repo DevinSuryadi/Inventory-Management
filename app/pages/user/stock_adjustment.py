@@ -17,14 +17,25 @@ def show():
     try:
         supabase = get_client()
 
-        product_res = supabase.table("product").select("productid, productname").eq("store", store).order("productname").execute()
+        product_res = supabase.table("product").select("productid, productname, size, type").eq("store", store).order("productname").execute()
         products = product_res.data or []
 
         if not products:
             st.info("Belum ada produk yang terdaftar untuk toko ini.")
             return
 
-        product_map = {p['productname']: p['productid'] for p in products}
+        def product_label(p):
+            name = p['productname']
+            size = p.get('size', '')
+            ptype = p.get('type', '')
+            label = name
+            if size:
+                label += f" ({size})"
+            if ptype:
+                label += f" - {ptype}"
+            return label
+        
+        product_map = {product_label(p): p['productid'] for p in products}
         selected_product_name = st.selectbox("Pilih Produk yang Akan Disesuaikan", options=product_map.keys(), key=f"adj_product_{st.session_state.stock_adj_form_key}")
 
         if selected_product_name:

@@ -50,14 +50,27 @@ def show():
         #  Add Items to Cart 
         st.markdown("### 2️⃣ Tambah Barang yang Diretur")
         
-        products_resp = supabase.table("product").select("productid, productname, type, brand, harga, quantity").eq("store", store).order("productname").execute()
+        products_resp = supabase.table("product").select("productid, productname, type, size, brand, harga, quantity").eq("store", store).order("productname").execute()
         products = products_resp.data or []
         
         if not products:
             st.info("Belum ada produk terdaftar di toko ini.")
             return
         
-        product_map = {f"{p['productname']} ({p.get('type', '-')}) - Stok: {p.get('quantity', 0)}": p for p in products}
+        def product_label(p):
+            name = p['productname']
+            size = p.get('size', '')
+            ptype = p.get('type', '')
+            stock = p.get('quantity', 0)
+            label = name
+            if size:
+                label += f" ({size})"
+            if ptype:
+                label += f" - {ptype}"
+            label += f" [Stok: {stock}]"
+            return label
+        
+        product_map = {product_label(p): p for p in products}
         
         col_prod, col_qty, col_price = st.columns([3, 1, 2])
         

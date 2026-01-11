@@ -26,12 +26,12 @@ def show():
 
         # Data Fetching and Display
         if st.button("Tampilkan Riwayat", type="primary"):
-            end_date_param = (end_date + datetime.timedelta(days=1)).isoformat()
+            end_date_param = (end_date + datetime.timedelta(days=1))
             
             response = supabase.rpc("get_stock_adjustment_history", {
                 "store_input": store,
-                "start_date_input": start_date.isoformat(),
-                "end_date_input": end_date_param
+                "start_date_input": str(start_date),
+                "end_date_input": str(end_date_param)
             }).execute()
 
             results = response.data
