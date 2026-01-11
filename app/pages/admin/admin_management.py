@@ -1,17 +1,16 @@
 import streamlit as st
 from app.db import get_client
 from app.auth import change_password, reset_password_admin
-from app.pages.admin import staff_management
 import pandas as pd
 import datetime
 
 def show():
-    st.title("Manajemen Toko & Pegawai")
+    st.title("Manajemen Toko")
     
     supabase = get_client()
     admin_user = st.session_state.get("username")
     
-    tab1, tab2, tab3 = st.tabs(["Manajemen Toko", "Manajemen Pegawai", "Keamanan"])
+    tab1, tab2 = st.tabs(["Manajemen Toko", "Keamanan"])
     
     # Manajemen Toko
     with tab1:
@@ -49,16 +48,20 @@ def show():
         # Add Toko
         with toko_tab2:
             st.subheader("Daftarkan Toko Baru")
-            st.info("Toko adalah user dengan role 'pegawai' yang dapat login ke aplikasi. Admin mendaftar toko dengan nama dan password.")
             with st.form("add_store_form"):
-                store_name = st.text_input("Nama Toko (Username)*", placeholder="Contoh: toko_keramik_kota")
-                store_display_name = st.text_input("Nama Tampilan Toko*", placeholder="Contoh: Toko Keramik Kota")
+                store_name = st.text_input("Nama Toko (Username)*", placeholder="Contoh: SuryaJaya")
+                store_display_name = st.text_input("Nama Tampilan Toko*", placeholder="Contoh: TokoKeramik_SuryaJaya")
                 password = st.text_input("Password (min 6 karakter)*", type="password")
                 confirm_password = st.text_input("Konfirmasi Password*", type="password")
                 
-                submitted = st.form_submit_button("Daftarkan Toko", use_container_width=True, type="primary")
+                st.divider()
+                confirm_add = st.checkbox("Data toko sudah benar")
+                submitted = st.form_submit_button("➕ Daftarkan Toko", use_container_width=True, type="primary")
                 
                 if submitted:
+                    if not confirm_add:
+                        st.error("Harap centang konfirmasi terlebih dahulu!")
+                        st.stop()
                     # Validasi
                     if not store_name.strip() or not store_display_name.strip():
                         st.error("Nama toko dan nama tampilan harus diisi!")
@@ -94,7 +97,7 @@ def show():
                         
                         response = supabase.table("users").insert(new_user).execute()
                         if response.data:
-                            st.success(f"Toko '{store_display_name}' berhasil dibuat dengan username '{store_name}'!")
+                            st.success(f"✅ Toko '{store_display_name}' berhasil dibuat dengan username '{store_name}'!")
                             st.rerun()
                         else:
                             st.error("Gagal membuat toko. Silakan coba lagi.")
@@ -104,7 +107,7 @@ def show():
                         if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
                             st.error(f"Username '{store_name}' sudah terdaftar di sistem. Gunakan username lain.")
                         elif "user_id" in error_str:
-                            st.error("Error: Gagal generate ID pengguna. Silakan hubungi administrator.")
+                            st.error("Error: Gagal generate ID pengguna.")
                         else:
                             st.error(f"Gagal membuat toko: {error_str}")
         
@@ -120,14 +123,20 @@ def show():
                     
                     with st.form("edit_store_form"):
                         new_store_name = st.text_input("Nama Toko Baru", value=selected_store)
-                        submitted = st.form_submit_button("Update Nama Toko", use_container_width=True)
+                        
+                        st.divider()
+                        confirm_edit = st.checkbox("Ubah nama toko")
+                        submitted = st.form_submit_button("💾 Update Nama Toko", use_container_width=True)
                         
                         if submitted:
+                            if not confirm_edit:
+                                st.error("Harap centang konfirmasi terlebih dahulu!")
+                                st.stop()
                             if new_store_name != selected_store:
                                 try:
                                     response = supabase.table("users").update({"store": new_store_name}).eq("store", selected_store).execute()
                                     if response.data:
-                                        st.success(f"Nama toko berhasil diubah dari '{selected_store}' ke '{new_store_name}'!")
+                                        st.success(f"✅ Nama toko berhasil diubah dari '{selected_store}' ke '{new_store_name}'!")
                                         st.rerun()
                                     else:
                                         st.error("Gagal mengupdate nama toko. Silakan coba lagi.")
@@ -143,17 +152,12 @@ def show():
                     st.info("Belum ada toko untuk diedit.")
             except Exception as e:
                 st.error(f"Error: {e}")
-
-    # Manajemen Pegawai
-    with tab2:
-        st.header("Kelola Pegawai per Toko")
-        staff_management.show()
     
     # Security Management
-    with tab3:
+    with tab2:
         st.header("Manajemen Keamanan")
         
-        sec_tab1, sec_tab2 = st.tabs(["Ubah Password Saya", "Reset Password User"])
+        sec_tab1, sec_tab2 = st.tabs(["Ubah Password Admin", "Reset Password Toko"])
         
         # Admin Password Change
         with sec_tab1:
@@ -176,7 +180,8 @@ def show():
 
         # User Password Reset
         with sec_tab2:
-            st.subheader("Reset Password User Lain")
+            st.subheader("Reset Password Toko Lain")
+            st.warning("⚠️ Tindakan ini akan mengubah password Toko secara permanen.")
             try:
                 users = supabase.table("users").select("username, role").execute()
                 if users.data:
@@ -189,16 +194,18 @@ def show():
                             new_pass = st.text_input("Password Baru", type="password")
                             confirm = st.text_input("Konfirmasi Password", type="password")
                             
-                            submitted = st.form_submit_button("Reset Password", use_container_width=True, type="primary")
+                            st.divider()
+                            confirm_reset = st.checkbox(f"Reset password untuk **{selected_user}**")
+                            submitted = st.form_submit_button("Reset Password", use_container_width=True, type="primary", disabled=not confirm_reset)
                             
-                            if submitted:
+                            if submitted and confirm_reset:
                                 if len(new_pass) < 6:
                                     st.error("Password minimal 6 karakter!")
                                 elif new_pass != confirm:
                                     st.error("Password tidak cocok!")
                                 else:
                                     if reset_password_admin(selected_user, new_pass):
-                                        st.success(f"Password '{selected_user}' berhasil direset!")
+                                        st.success(f"✅ Password '{selected_user}' berhasil direset!")
                                         st.rerun()
             except Exception as e:
                 st.error(f"Error: {e}")

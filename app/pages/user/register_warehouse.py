@@ -4,11 +4,20 @@ from app.db import get_client
 def show():
     st.title("Tambahkan Gudang Baru")
 
-    with st.form("register_warehouse_form"):
-        warehouse_name = st.text_input("Nama Gudang*")
-        submitted = st.form_submit_button("Simpan Gudang")
+    # Initialize form key for reset
+    if "register_warehouse_form_key" not in st.session_state:
+        st.session_state.register_warehouse_form_key = 0
 
+    with st.form(f"register_warehouse_form_{st.session_state.register_warehouse_form_key}"):
+        warehouse_name = st.text_input("Nama Gudang*")
+        
+        st.divider()
+        confirm = st.checkbox("Data gudang ini benar")
+        submitted = st.form_submit_button("Simpan Gudang", use_container_width=True, type="primary")
         if submitted:
+            if not confirm:
+                st.error("Harap centang konfirmasi terlebih dahulu!")
+                st.stop()
             if not warehouse_name.strip():
                 st.warning("Nama gudang tidak boleh kosong.")
                 return
@@ -16,16 +25,18 @@ def show():
             try:
                 supabase = get_client()
                 
-                check_res = supabase.table("warehouse_list").select("warehouseid", count='exact').eq("name", warehouse_name).execute()
+                check_res = supabase.table("warehouse_list").select("warehouseid", count='exact').eq("name", warehouse_name.strip()).execute()
                 if check_res.count > 0:
                     st.error(f"Gudang dengan nama '{warehouse_name}' sudah ada.")
                     return
 
                 # Insert data ke tabel 'warehouse_list'
-                response = supabase.table("warehouse_list").insert({"name": warehouse_name}).execute()
+                response = supabase.table("warehouse_list").insert({"name": warehouse_name.strip()}).execute()
                 
                 if response.data:
-                    st.success(f"Gudang '{warehouse_name}' berhasil ditambahkan.")
+                    st.success(f"✅ Gudang '{warehouse_name}' berhasil ditambahkan.")
+                    # Reset form
+                    st.session_state.register_warehouse_form_key += 1
                     st.rerun()
                 else:
                     st.error("Gagal menambahkan gudang. Silakan coba lagi.")
@@ -33,6 +44,6 @@ def show():
             except Exception as e:
                 error_str = str(e)
                 if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
-                    st.error(f"Nama gudang '{warehouse_name}' sudah terdaftar. Gunakan nama lain.")
+                    st.error(f"Nama gudang '{warehouse_name}' sudah terdaftar")
                 else:
                     st.error(f"Terjadi kesalahan: {error_str}")

@@ -18,62 +18,110 @@ def show():
     # Utang Aktif
     with tab1:
         st.header("Daftar Utang yang Belum Lunas")
+        
+        # Sort options
+        col_sort, col_filter = st.columns(2)
+        with col_sort:
+            sort_option = st.selectbox(
+                "Urutkan berdasarkan",
+                options=["due_date_asc", "due_date_desc", "amount_desc", "date_desc"],
+                format_func=lambda x: {
+                    "due_date_asc": "Jatuh Tempo Terdekat",
+                    "due_date_desc": "Jatuh Tempo Terjauh",
+                    "amount_desc": "Jumlah Terbesar",
+                    "date_desc": "Tanggal Terbaru"
+                }.get(x, x),
+                key="sort_supplier_debt"
+            )
+        with col_filter:
+            show_overdue_only = st.checkbox("Tampilkan hanya yang jatuh tempo", key="filter_overdue")
+        
         try:
-            active_debts_resp = supabase.rpc("get_supplier_debts", {"store_input": store}).execute()
-            active_debts = active_debts_resp.data
+            # Try new function with TOP first
+            try:
+                active_debts_resp = supabase.rpc("get_supplier_debts_with_top", {"store_input": store}).execute()
+                active_debts = active_debts_resp.data
+                has_top = True
+            except:
+                # Fallback to old function
+                active_debts_resp = supabase.rpc("get_supplier_debts", {"store_input": store}).execute()
+                active_debts = active_debts_resp.data
+                has_top = False
 
             if not active_debts:
-                st.info("Tidak ada utang aktif kepada supplier. Bagus!")
+                st.success("Tidak ada utang aktif supplier")
             else:
+                # Apply sorting
                 df_active = pd.DataFrame(active_debts)
                 
-                search_term_active = st.text_input("Cari utang aktif berdasarkan nama supplier", key="search_active")
+                if has_top and 'due_date' in df_active.columns:
+                    if sort_option == "due_date_asc":
+                        df_active = df_active.sort_values('due_date', ascending=True, na_position='last')
+                    elif sort_option == "due_date_desc":
+                        df_active = df_active.sort_values('due_date', ascending=False, na_position='last')
+                
+                if sort_option == "amount_desc":
+                    df_active = df_active.sort_values('remaining_debt', ascending=False)
+                elif sort_option == "date_desc":
+                    df_active = df_active.sort_values('debt_date', ascending=False)
+                
+                # Filter overdue
+                if show_overdue_only and has_top and 'days_until_due' in df_active.columns:
+                    df_active = df_active[df_active['days_until_due'] < 0]
+                
+                search_term_active = st.text_input("Cari berdasarkan nama supplier", key="search_active")
                 if search_term_active:
                     df_active = df_active[df_active['supplier_name'].str.contains(search_term_active, case=False, na=False)]
 
                 if df_active.empty:
-                    st.warning("Tidak ada utang aktif yang cocok dengan pencarian Anda.")
+                    st.warning("Tidak ada utang aktif yang cocok dengan filter/pencarian Anda.")
                 else:
+                    # Summary metrics
+                    col_m1, col_m2, col_m3 = st.columns(3)
+                    with col_m1:
+                        total_debt = df_active['remaining_debt'].sum()
+                        st.metric("Total Sisa Utang", f"Rp {total_debt:,.0f}")
+                    with col_m2:
+                        st.metric("Jumlah Tagihan", f"{len(df_active)} supplier")
+                    with col_m3:
+                        if has_top and 'days_until_due' in df_active.columns:
+                            overdue_count = len(df_active[df_active['days_until_due'] < 0])
+                            st.metric("Jatuh Tempo", f"{overdue_count} tagihan", delta="-overdue" if overdue_count > 0 else None, delta_color="inverse")
+                    
+                    st.divider()
                     st.write(f"Menampilkan {len(df_active)} utang aktif.")
                     
                     for index, row in df_active.iterrows():
                         sisa_utang = row['remaining_debt']
-                        with st.expander(f"Utang ke **{row['supplier_name']}** - Sisa: Rp {sisa_utang:,.0f}"):
-                            st.write(f"**ID Utang:** {row['debtid']}")
-                            st.write(f"**Tanggal Utang:** {pd.to_datetime(row['debt_date']).strftime('%d %B %Y')}")
-                            st.write(f"**Total Utang:** Rp {row['total_debt']:,.0f}")
-                            st.write(f"**Sudah Dibayar:** Rp {row['paid_amount']:,.0f}")
-                            st.write(f"**Deskripsi:** {row['purchase_description'] or '-'}")
-                            
-                            # Fetch detail produk yang dibeli dalam transaksi ini
-                            try:
-                                purchase_details = supabase.table("purchase").select(
-                                    "product(productname, type), quantity, price"
-                                ).eq("purchaseid", row['debtid']).execute()
-                                
-                                if purchase_details.data:
-                                    st.markdown("---")
-                                    st.write("**Produk yang Dibeli:**")
-                                    for item in purchase_details.data:
-                                        product = item.get('product')
-                                        if isinstance(product, list) and len(product) > 0:
-                                            product_name = product[0].get('productname', 'Produk tidak ditemukan')
-                                            product_type = product[0].get('type', '-')
-                                        else:
-                                            product_name = 'Produk tidak ditemukan'
-                                            product_type = '-'
-                                        qty = item.get('quantity', 0)
-                                        price = item.get('price', 0)
-                                        st.write(f"- {product_name} ({product_type}): {qty} unit @ Rp {price:,.0f} = Rp {qty * price:,.0f}")
-                            except Exception as e:
-                                st.warning("Produk detail tidak tersedia")
+                        
+                        # Determine urgency badge
+                        urgency_badge = ""
+                        if has_top and 'days_until_due' in row and row['days_until_due'] is not None:
+                            days = row['days_until_due']
+                            if days < 0:
+                                urgency_badge = f"Jatuh Tempo {abs(int(days))} Hari lalu"
+                            elif days <= 7:
+                                urgency_badge = f"{int(days)} Hari lagi"
+                            elif days <= 30:
+                                urgency_badge = f"{int(days)} Hari lagi"
+                        
+                        with st.expander(f"**{row['supplier_name']}** - Sisa: Rp {sisa_utang:,.0f} {urgency_badge}"):
+                            col_info1, col_info2 = st.columns(2)
+                            with col_info1:
+                                st.write(f"**ID Utang:** {row['debtid']}")
+                                st.write(f"**Tanggal Utang:** {pd.to_datetime(row['debt_date']).strftime('%d %B %Y')}")
+                                st.write(f"**Total Utang:** Rp {row['total_debt']:,.0f}")
+                            with col_info2:
+                                st.write(f"**Sudah Dibayar:** Rp {row['paid_amount']:,.0f}")
+                                if has_top and row.get('due_date'):
+                                    st.write(f"**Jatuh Tempo (TOP):** {pd.to_datetime(row['due_date']).strftime('%d %B %Y')}")
+                                st.write(f"**Deskripsi:** {row.get('purchase_description') or '-'}")
                             
                             st.markdown("---")
                             
                             with st.form(f"payment_form_supplier_{row['debtid']}"):
                                 st.write("**Form Pembayaran**")
 
-                                # Input Tanggal dan Waktu
                                 col_tgl, col_jam = st.columns(2)
                                 with col_tgl:
                                     payment_date = st.date_input("Tanggal Bayar", value=datetime.date.today(), key=f"pay_date_{row['debtid']}_1")
@@ -83,16 +131,26 @@ def show():
                                 payment_amount = st.number_input("Jumlah Pembayaran (Rp)", min_value=0, max_value=int(sisa_utang), step=1000, format="%d", key=f"pay_amt_{row['debtid']}_1")
                                 payment_note = st.text_area("Catatan Pembayaran", value="Pembayaran utang supplier", key=f"pay_note_{row['debtid']}_1")
                                 
-                                if st.form_submit_button("Bayar"):
-                                    payment_datetime = datetime.datetime.combine(payment_date, payment_time)
-                                    supabase.rpc("record_supplier_payment", {
-                                        "p_debtid": row['debtid'],
-                                        "p_amount": payment_amount,
-                                        "p_note": payment_note,
-                                        "p_transaction_date": payment_datetime.isoformat()
-                                    }).execute()
-                                    st.success("Pembayaran berhasil dicatat!")
-                                    st.rerun()
+                                confirm = st.checkbox("Konfirmasi pembayaran", key=f"confirm_{row['debtid']}")
+                                
+                                submitted = st.form_submit_button("💳 Bayar")
+                                
+                                if submitted:
+                                    if not confirm:
+                                        st.error("Harap centang konfirmasi terlebih dahulu!")
+                                    else:
+                                        payment_datetime = datetime.datetime.combine(payment_date, payment_time)
+                                        try:
+                                            supabase.rpc("record_supplier_payment", {
+                                                "p_debtid": row['debtid'],
+                                                "p_amount": payment_amount,
+                                                "p_note": payment_note,
+                                                "p_transaction_date": payment_datetime.isoformat()
+                                            }).execute()
+                                            st.success("✅ Pembayaran berhasil dicatat!")
+                                            st.rerun()
+                                        except Exception as e:
+                                            st.error(f"Gagal mencatat pembayaran: {e}")
                             
                             st.write("**Riwayat Pembayaran Utang Ini:**")
                             history_resp = supabase.table("payment_history").select("*").eq("debtid", row['debtid']).order("paidat", desc=True).execute()
@@ -117,43 +175,20 @@ def show():
                 st.info("Belum ada riwayat utang yang lunas.")
             else:
                 df_paid = pd.DataFrame(paid_debts)
-                search_term_paid = st.text_input("Cari riwayat berdasarkan nama supplier", key="search_paid")
+                search_term_paid = st.text_input("Cari berdasarkan nama supplier", key="search_paid")
                 if search_term_paid:
                     df_paid = df_paid[df_paid['supplier_name'].str.contains(search_term_paid, case=False, na=False)]
                 if df_paid.empty:
-                    st.warning("Tidak ada riwayat yang cocok dengan pencarian Anda.")
+                    st.warning("Tidak ada riwayat yang cocok dengan pencarian.")
                 else:
                     st.write(f"Menampilkan {len(df_paid)} riwayat utang lunas.")
                     for index, row in df_paid.iterrows():
-                        with st.expander(f"Lunas: Utang ke **{row['supplier_name']}** - Total Rp {row['total_debt']:,.0f}"):
+                        with st.expander(f"✅ **{row['supplier_name']}** - Total Rp {row['total_debt']:,.0f}"):
                             st.write(f"**ID Utang:** {row['debtid']}")
                             st.write(f"**Tanggal Utang:** {pd.to_datetime(row['debt_date']).strftime('%d %B %Y')}")
-                            st.write(f"**Deskripsi:** {row['purchase_description'] or '-'}")
-                            
-                            # Fetch detail produk yang dibeli dalam transaksi ini
-                            try:
-                                purchase_details = supabase.table("purchase").select(
-                                    "product(productname, type), quantity"
-                                ).eq("purchaseid", row['debtid']).execute()
-                                
-                                if purchase_details.data:
-                                    st.markdown("---")
-                                    st.write("**Produk yang Dibeli:**")
-                                    for item in purchase_details.data:
-                                        product = item.get('product')
-                                        if isinstance(product, list) and len(product) > 0:
-                                            product_name = product[0].get('productname', 'Produk tidak ditemukan')
-                                            product_type = product[0].get('type', '-')
-                                        else:
-                                            product_name = 'Produk tidak ditemukan'
-                                            product_type = '-'
-                                        qty = item.get('quantity', 0)
-                                        st.write(f"- {product_name} ({product_type}): {qty} unit")
-                            except Exception as e:
-                                pass
-                            
+                            st.write(f"**Deskripsi:** {row.get('purchase_description') or '-'}")
                             st.markdown("---")
                             st.write("**Detail Pelunasan (Cicilan):**")
-                            st.text(row['payment_history_details'] or 'Tidak ada detail pembayaran tercatat.')
+                            st.text(row.get('payment_history_details') or 'Tidak ada detail pembayaran tercatat.')
         except Exception as e:
             st.error(f"Terjadi kesalahan saat memuat riwayat utang: {e}")

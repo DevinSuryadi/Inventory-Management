@@ -10,6 +10,10 @@ def show():
         st.warning("Data toko tidak ditemukan. Silakan login kembali.")
         return
 
+    # Initialize form key for reset
+    if "stock_adj_form_key" not in st.session_state:
+        st.session_state.stock_adj_form_key = 0
+
     try:
         supabase = get_client()
 
@@ -21,7 +25,7 @@ def show():
             return
 
         product_map = {p['productname']: p['productid'] for p in products}
-        selected_product_name = st.selectbox("Pilih Produk yang Akan Disesuaikan", options=product_map.keys())
+        selected_product_name = st.selectbox("Pilih Produk yang Akan Disesuaikan", options=product_map.keys(), key=f"adj_product_{st.session_state.stock_adj_form_key}")
 
         if selected_product_name:
             product_id = product_map[selected_product_name]
@@ -48,12 +52,12 @@ def show():
                 st.warning("Tidak ada gudang terdaftar. Silakan daftarkan gudang terlebih dahulu.")
                 return
 
-            with st.form("adjustment_form"):
+            with st.form(f"adjustment_form_{st.session_state.stock_adj_form_key}"):
                 st.subheader(f"Menyesuaikan: {selected_product_name}")
                 
                 selected_warehouse_label = st.selectbox("Pilih Gudang", options=warehouse_options.keys())
                 
-                adj_type = st.radio("Jenis Penyesuaian", ["add", "reduce"], horizontal=True)
+                adj_type = st.radio("Jenis Penyesuaian", ["add", "reduce"], horizontal=True, format_func=lambda x: "➕ Tambah" if x == "add" else "➖ Kurangi")
                 
                 max_val = None
                 current_stock = warehouse_options[selected_warehouse_label]['qty']
@@ -61,9 +65,9 @@ def show():
                 if adj_type == 'reduce':
                     if current_stock > 0:
                         max_val = current_stock
-                        st.info(f"Anda bisa mengurangi maksimal {max_val} item dari gudang ini.")
+                        st.info(f"Anda bisa mengurangi {max_val} item dari gudang ini.")
                     else:
-                        st.error("Stok di gudang ini sudah 0, tidak bisa dikurangi.")
+                        st.error("Stok di gudang ini sudah 0")
                 
                 quantity = st.number_input("Jumlah", min_value=1, max_value=max_val, step=1, disabled=(adj_type == 'reduce' and current_stock == 0))
 
@@ -76,9 +80,18 @@ def show():
                     transaction_time = st.time_input("Waktu Penyesuaian", value=datetime.datetime.now().time())
 
                 description = st.text_area("Keterangan / Alasan")
-                submitted = st.form_submit_button("Simpan Perubahan")
+                
+                st.divider()
+                st.warning("⚠️ Penyesuaian stok akan mengubah jumlah barang di gudang.")
+                
+                confirm = st.checkbox("Saya yakin penyesuaian ini benar")
+                submitted = st.form_submit_button("Simpan Perubahan", use_container_width=True, type="primary")
 
                 if submitted:
+                    if not confirm:
+                        st.error("Harap centang konfirmasi terlebih dahulu!")
+                        st.stop()
+                    
                     if adj_type == 'reduce' and current_stock == 0:
                          st.error("Aksi dibatalkan. Stok 0 tidak bisa dikurangi.")
                     else:
@@ -88,11 +101,13 @@ def show():
                             "p_warehouse_id": warehouse_options[selected_warehouse_label]['id'],
                             "p_adj_type": adj_type,
                             "p_quantity": quantity,
-                            "p_description": description,
-                            "p_transaction_date": transaction_datetime.isoformat() # Kirim tanggal manual
+                            "p_description": description if description.strip() else None,
+                            "p_transaction_date": transaction_datetime.isoformat()
                         }
                         supabase.rpc("record_stock_adjustment", params).execute()
-                        st.success("Penyesuaian stok berhasil disimpan.")
+                        st.success("✅ Penyesuaian stok berhasil disimpan.")
+                        # Reset form by incrementing key
+                        st.session_state.stock_adj_form_key += 1
                         st.rerun()
 
     except Exception as e:

@@ -13,7 +13,7 @@ def show():
 
     try:
         # Filter & Search Section
-        st.markdown("<h3>🔍 Filter & Pencarian</h3>", unsafe_allow_html=True)
+        st.markdown("<h3>Filter & Pencarian</h3>", unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns(3)
         with col1:

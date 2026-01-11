@@ -1,6 +1,3 @@
-# app/utils/validators.py
-# Utility functions untuk validasi input
-
 import re
 from typing import Any, Optional
 
@@ -17,7 +14,6 @@ def validate_product_name(name: str) -> tuple[bool, str]:
     return True, ""
 
 def validate_supplier_name(name: str) -> tuple[bool, str]:
-    """Validasi nama supplier."""
     if not name or not name.strip():
         return False, "Nama supplier tidak boleh kosong."
     
@@ -30,7 +26,6 @@ def validate_supplier_name(name: str) -> tuple[bool, str]:
     return True, ""
 
 def validate_warehouse_name(name: str) -> tuple[bool, str]:
-    """Validasi nama gudang."""
     if not name or not name.strip():
         return False, "Nama gudang tidak boleh kosong."
     
@@ -41,8 +36,7 @@ def validate_warehouse_name(name: str) -> tuple[bool, str]:
 
 def validate_phone_number(phone: str) -> tuple[bool, str]:
     if not phone or not phone.strip():
-        return True, ""  # Phone bersifat optional
-    
+        return True, "" 
     # Remove common separators
     cleaned = phone.replace("-", "").replace(" ", "").replace("+", "")
     
@@ -59,7 +53,6 @@ def validate_phone_number(phone: str) -> tuple[bool, str]:
     return True, ""
 
 def validate_quantity(qty: Any) -> tuple[bool, str]:
-    """Validasi jumlah barang (harus integer positif)."""
     try:
         qty_int = int(qty)
         if qty_int < 1:
@@ -69,7 +62,6 @@ def validate_quantity(qty: Any) -> tuple[bool, str]:
         return False, "Jumlah harus berupa angka."
 
 def validate_price(price: Any) -> tuple[bool, str]:
-    """Validasi harga (harus angka positif, minimal 0.01)."""
     try:
         price_float = float(price)
         if price_float < 0.01:
@@ -81,7 +73,7 @@ def validate_price(price: Any) -> tuple[bool, str]:
 def validate_email(email: str) -> tuple[bool, str]:
     """Validasi email format."""
     if not email or not email.strip():
-        return True, ""  # Email optional
+        return True, "" 
     
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(pattern, email.strip()):
@@ -102,7 +94,6 @@ def validate_password(password: str) -> tuple[bool, str]:
     return True, ""
 
 def validate_username(username: str) -> tuple[bool, str]:
-    """Validasi username."""
     if not username or not username.strip():
         return False, "Username tidak boleh kosong."
     
@@ -112,7 +103,6 @@ def validate_username(username: str) -> tuple[bool, str]:
     if len(username.strip()) > 20:
         return False, "Username maksimal 20 karakter."
     
-    # Alphanumeric dan underscore only
     if not re.match(r'^[a-zA-Z0-9_]+$', username.strip()):
         return False, "Username hanya boleh mengandung huruf, angka, dan underscore."
     

@@ -9,7 +9,6 @@ def show():
     supabase = get_client()
     admin_user = st.session_state.get("username")
 
-    # Ambil daftar toko
     users_resp = supabase.table("users").select("store").neq("role", "admin").execute()
     stores = sorted(list(set([user['store'] for user in users_resp.data])))
     
@@ -20,10 +19,8 @@ def show():
     selected_store = st.selectbox("Pilih Toko untuk Dikelola", options=stores)
 
     if selected_store:
-        # Pastikan toko punya akun kas default
         supabase.rpc("create_default_cash_account", {"p_store_name": selected_store}).execute()
         
-        # Ambil semua akun untuk toko yang dipilih
         accounts_resp = supabase.table("accounts").select("*").eq("store", selected_store).order("is_default", desc=True).execute()
         accounts = accounts_resp.data or []
         account_map = {f"{acc['account_name']} ({acc['account_type']})": acc for acc in accounts}
@@ -31,7 +28,6 @@ def show():
         st.markdown("---")
         st.subheader("Ringkasan Saldo")
         
-        # Tampilkan saldo dalam kolom
         cols = st.columns(len(accounts))
         for i, acc in enumerate(accounts):
             cols[i].metric(label=acc['account_name'], value=f"Rp {acc['balance']:,.0f}")
@@ -44,7 +40,7 @@ def show():
             st.subheader("Daftarkan Rekening Bank Baru")
             with st.form("add_bank_account_form"):
                 bank_name = st.text_input("Nama Bank (e.g., BCA, Mandiri)")
-                account_name = st.text_input("Nama Rekening (e.g., BCA Operasional)")
+                account_name = st.text_input("Nama Rekening (e.g., BCA_Nama)")
                 account_number = st.text_input("Nomor Rekening")
                 submitted = st.form_submit_button("Simpan Rekening")
                 if submitted:
@@ -65,7 +61,7 @@ def show():
                     except Exception as e:
                         error_str = str(e)
                         if "duplicate key" in error_str.lower() or "unique constraint" in error_str.lower():
-                            st.error(f"Rekening '{account_name}' sudah terdaftar di toko ini. Gunakan nama lain.")
+                            st.error(f"Rekening '{account_name}' sudah terdaftar di toko ini")
                         else:
                             st.error(f"Gagal menambahkan rekening: {error_str}")
 
@@ -79,7 +75,7 @@ def show():
                 adj_date = st.date_input("Tanggal", value=datetime.date.today())
                 submitted = st.form_submit_button("Proses Penyesuaian")
                 if submitted:
-                    final_amount = amount if adj_type == "Pemasukan (Kredit)" else -amount
+                    final_amount = amount if "Pemasukan" in adj_type else -amount
                     target_account_id = account_map[target_account_label]['account_id']
                     supabase.rpc("adjust_account_balance", {
                         "p_account_id": target_account_id,

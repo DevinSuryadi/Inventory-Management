@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 
 def show():
-    st.title("Riwayat Arus Kas (Buku Besar)")
+    st.title("Riwayat Arus Kas")
     
     supabase = get_client()
 
@@ -37,7 +37,7 @@ def show():
         with col3:
             end_date = st.date_input("Sampai Tanggal", value=datetime.date.today())
 
-        if st.button("Tampilkan Riwayat"):
+        if st.button("Tampilkan Riwayat", type="primary"):
             account_id = account_map[selected_account_label]
             end_date_param = (end_date + datetime.timedelta(days=1))
             
@@ -49,9 +49,7 @@ def show():
             else:
                 df = pd.DataFrame(history)
                 
-                # Uang Masuk (amount > 0) 
                 df['Debit'] = df['amount'].apply(lambda x: x if x > 0 else None)
-                # Uang Keluar (amount < 0) 
                 df['Kredit'] = df['amount'].apply(lambda x: -x if x < 0 else None)
                 
                 df = df.rename(columns={

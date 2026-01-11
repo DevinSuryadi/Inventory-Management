@@ -25,7 +25,7 @@ def show():
         search_term = st.text_input("Cari berdasarkan Nama Produk")
 
         # Data Fetching and Display
-        if st.button("Tampilkan Riwayat"):
+        if st.button("Tampilkan Riwayat", type="primary"):
             end_date_param = (end_date + datetime.timedelta(days=1)).isoformat()
             
             response = supabase.rpc("get_stock_adjustment_history", {

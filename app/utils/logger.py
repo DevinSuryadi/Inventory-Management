@@ -1,6 +1,3 @@
-# app/utils/logger.py
-# Logging system untuk audit trail dan debugging
-
 import logging
 import logging.handlers
 import json
@@ -62,8 +59,8 @@ def setup_logger(name: str, log_file: Optional[str] = None, level: int = logging
         log_path = LOGS_DIR / log_file
         file_handler = logging.handlers.RotatingFileHandler(
             log_path,
-            maxBytes=10 * 1024 * 1024,  # 10 MB
-            backupCount=5,  # Keep 5 backup files
+            maxBytes=10 * 1024 * 1024,  
+            backupCount=5, 
             encoding='utf-8'
         )
         file_handler.setLevel(level)
@@ -107,7 +104,6 @@ def log_purchase_transaction(
     supplier_name: str,
     transaction_date: str
 ):
-    """Log purchase transaction."""
     data = {
         "type": "purchase",
         "product_id": product_id,
@@ -134,7 +130,6 @@ def log_sale_transaction(
     customer_name: Optional[str],
     transaction_date: str
 ):
-    """Log sale transaction."""
     data = {
         "type": "sale",
         "product_id": product_id,
@@ -156,7 +151,7 @@ def log_stock_adjustment(
     product_id: int,
     product_name: str,
     warehouse: str,
-    adjustment_type: str,  # "add" or "reduce"
+    adjustment_type: str, 
     quantity: int,
     reason: str,
     date: str
@@ -180,7 +175,7 @@ def log_stock_adjustment(
 def log_payment(
     username: str,
     store: str,
-    payment_type: str,  # "supplier" or "customer"
+    payment_type: str,  
     payer_or_recipient: str,
     amount: float,
     transaction_id: int,
@@ -200,7 +195,6 @@ def log_payment(
     )
 
 def log_error(error: Exception, context: str = "", username: Optional[str] = None):
-    """Log error untuk debugging."""
     extra = {}
     if username:
         extra["user"] = username

@@ -1,6 +1,3 @@
-# app/utils/error_handlers.py
-# Utility functions untuk standardized error handling
-
 import streamlit as st
 import logging
 from typing import Any, Callable, TypeVar, Optional
@@ -10,9 +7,6 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T')
 
 def handle_api_error(error: Exception, context: str = "") -> str:
-    """
-    Handle API/Supabase errors dan return user-friendly message.
-    """
     error_str = str(error).lower()
     
     # Supabase specific errors
@@ -35,12 +29,6 @@ def handle_api_error(error: Exception, context: str = "") -> str:
     return message
 
 def safe_api_call(func: Callable[..., T], *args, **kwargs) -> Optional[T]:
-    """
-    Execute API call dengan error handling otomatis.
-    
-    Usage:
-    result = safe_api_call(supabase.table("users").select("*").execute)
-    """
     try:
         return func(*args, **kwargs)
     except Exception as e:
@@ -61,33 +49,20 @@ def show_warning_toast(message: str, duration: int = 4):
     st.warning(message)
 
 def confirm_action(title: str, question: str = "Lanjutkan?", key: str = None) -> bool:
-    """
-    Show confirmation dialog untuk destructive actions.
-    
-    Usage:
-    if confirm_action("Hapus Produk", "Yakin ingin menghapus?"):
-        # Delete product
-    """
     if key is None:
         key = f"confirm_{title}"
     
     col1, col2 = st.columns(2)
     with col1:
-        if st.button(f"✓ Ya, {question}", key=f"{key}_yes"):
+        if st.button(f"Ya, {question}", key=f"{key}_yes"):
             return True
     with col2:
-        if st.button(f"✗ Batal", key=f"{key}_no"):
+        if st.button(f"Batal", key=f"{key}_no"):
             return False
     
     return False
 
 def validate_form_data(data: dict, required_fields: list[str]) -> tuple[bool, str]:
-    """
-    Validate form data has required fields.
-    
-    Usage:
-    is_valid, msg = validate_form_data(form_data, ['name', 'email'])
-    """
     missing_fields = [f for f in required_fields if not data.get(f)]
     
     if missing_fields:
@@ -96,7 +71,6 @@ def validate_form_data(data: dict, required_fields: list[str]) -> tuple[bool, st
     return True, ""
 
 class ErrorHandler:
-    """Context manager untuk exception handling yang rapi."""
     
     def __init__(self, context: str = "", show_error: bool = True):
         self.context = context
@@ -116,12 +90,6 @@ class ErrorHandler:
             
             logger.error(f"{self.context}: {str(exc_val)}")
             
-            # Return True untuk suppress exception
             return True
         
         return False
-
-# Example usage:
-# with ErrorHandler("Fetch Products"):
-#     products = supabase.table("product").select("*").execute()
-#     return products.data
