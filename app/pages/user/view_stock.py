@@ -103,7 +103,7 @@ def show():
             
             st.markdown("<h3>Daftar Produk</h3>", unsafe_allow_html=True)
             
-            display_df = df[['ID', 'Nama Produk', 'Jenis', 'Total Kuantitas', 'Harga Rata-rata', 'Supplier', 'Gudang']].copy()
+            display_df = df[['ID', 'Nama Produk', 'Jenis', 'Ukuran', 'Total Kuantitas', 'Harga Rata-rata', 'Supplier', 'Gudang']].copy()
             display_df['Harga Rata-rata'] = display_df['Harga Rata-rata'].apply(lambda x: f"Rp {x:,.0f}")
             
             st.dataframe(
@@ -114,6 +114,7 @@ def show():
                     "ID": st.column_config.TextColumn("ID", width="small"),
                     "Nama Produk": st.column_config.TextColumn("Nama Produk", width="medium"),
                     "Jenis": st.column_config.TextColumn("Jenis", width="small"),
+                    "Ukuran": st.column_config.TextColumn("Ukuran", width="small"),
                     "Total Kuantitas": st.column_config.NumberColumn("Stok", width="small"),
                     "Harga Rata-rata": st.column_config.TextColumn("Harga", width="medium"),
                     "Supplier": st.column_config.TextColumn("Supplier", width="medium"),

@@ -39,14 +39,25 @@ def show():
         # Add Items to Cart
         st.markdown("### 2️⃣ Tambah Barang ke Keranjang")
         
-        products_resp = supabase.table("product").select("productid, productname, type, brand, harga").eq("store", store).order("productname").execute()
+        products_resp = supabase.table("product").select("productid, productname, type, size, brand, harga").eq("store", store).order("productname").execute()
         products = products_resp.data or []
         
         if not products:
             st.info("Belum ada produk yang terdaftar untuk toko ini.")
             return
         
-        product_map = {f"{p['productname']} ({p.get('type', '-')})": p for p in products}
+        def product_label(p):
+            name = p['productname']
+            size = p.get('size', '')
+            ptype = p.get('type', '')
+            label = name
+            if size:
+                label += f" ({size})"
+            if ptype:
+                label += f" - {ptype}"
+            return label
+        
+        product_map = {product_label(p): p for p in products}
         
         col_prod, col_qty, col_price = st.columns([3, 1, 2])
         
@@ -145,31 +156,33 @@ def show():
         if cart:
             st.markdown("### 4️⃣ Pembayaran & Konfirmasi")
             
+            # Payment type selection OUTSIDE form for reactivity
+            col_payment, col_account = st.columns(2)
+            with col_payment:
+                payment_type = st.radio("Metode Pembayaran", ["Cash", "Credit"], horizontal=True, key="sale_payment_type")
+                payment_type_value = "cash" if "Cash" in payment_type else "credit"
+            
+            accounts_resp = supabase.table("accounts").select("account_id, account_name").eq("store", store).execute()
+            account_map = {acc['account_name']: acc['account_id'] for acc in accounts_resp.data or []}
+            
+            selected_account_name = None
+            due_date = None
+            
+            with col_account:
+                if payment_type_value == "cash":
+                    if account_map:
+                        selected_account_name = st.selectbox("Terima ke Rekening", options=list(account_map.keys()), key="sale_account")
+                    else:
+                        st.warning("Tidak ada rekening cash tersedia")
+                else:  # credit
+                    due_date = st.date_input("Jatuh Tempo (TOP)", value=datetime.date.today() + datetime.timedelta(days=30), key="sale_due_date")
+            
             with st.form("sale_form", border=True):
                 col_date, col_time = st.columns(2)
                 with col_date:
                     transaction_date = st.date_input("Tanggal Transaksi", value=datetime.date.today())
                 with col_time:
                     transaction_time = st.time_input("Waktu Transaksi", value=datetime.datetime.now().time())
-                
-                col_payment, col_account = st.columns(2)
-                with col_payment:
-                    payment_type = st.radio("Metode Pembayaran", ["Cash", "Credit"], horizontal=True)
-                    payment_type_value = "cash" if "Cash" in payment_type else "credit"
-                
-                accounts_resp = supabase.table("accounts").select("account_id, account_name").eq("store", store).execute()
-                account_map = {acc['account_name']: acc['account_id'] for acc in accounts_resp.data or []}
-                
-                selected_account_name = None
-                due_date = None
-                
-                with col_account:
-                    if payment_type_value == "cash" and account_map:
-                        selected_account_name = st.selectbox("Terima ke Rekening", options=account_map.keys())
-                    elif payment_type_value == "credit":
-                        due_date = st.date_input("Jatuh Tempo (TOP)", value=datetime.date.today() + datetime.timedelta(days=30))
-                    elif not account_map and payment_type_value == "cash":
-                        st.warning("Tidak ada rekening cash tersedia")
 
                 description = st.text_area("Catatan/Deskripsi (opsional)")
                 
@@ -190,19 +203,19 @@ def show():
                     total_amount = sum(item['subtotal'] for item in cart)
                     
                     # Prepare items for RPC
-                    items_json = json.dumps([{
+                    items_list = [{
                         'product_id': item['product_id'],
                         'quantity': item['qty'],
                         'price': item['price']
-                    } for item in cart])
+                    } for item in cart]
                     
                     try:
                         result = supabase.rpc("record_sale_transaction_multi", {
                             "p_store": store,
                             "p_warehouse_id": warehouse_map[selected_warehouse_name],
-                            "p_customer_name": customer_name if customer_name else None,
-                            "p_items": items_json,
+                            "p_items": json.dumps(items_list),
                             "p_payment_type": payment_type_value,
+                            "p_customer_name": customer_name if customer_name else None,
                             "p_due_date": due_date.isoformat() if due_date else None,
                             "p_account_id": account_map.get(selected_account_name) if selected_account_name else None,
                             "p_description": description,
