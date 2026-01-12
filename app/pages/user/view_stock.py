@@ -25,10 +25,9 @@ def show():
                                   ["Nama Produk", "Stok (Tertinggi)", "Stok (Terendah)", "Harga"])
         
         st.divider()
-        
-        # Data Fetching
+
         response = supabase.table("product").select(
-            "productid, productname, type, size, color, brand, description, updateat, "
+            "productid, productname, type, size, color, brand, description, updateat, harga, "
             "productsupply(price, supplier(suppliername)), "
             "product_warehouse(quantity, warehouse_list(name))"
         ).eq("store", store).execute()
@@ -36,13 +35,9 @@ def show():
         rows = []
         for p in response.data:
             supplies = p.get("productsupply", [])
-            if supplies:
-                total_harga = sum(s["price"] for s in supplies)
-                avg_price = total_harga / len(supplies) if supplies else 0
-                supplier_names = {s["supplier"]["suppliername"] for s in supplies if s.get("supplier")}
-            else:
-                avg_price = 0
-                supplier_names = set()
+            supplier_names = {s["supplier"]["suppliername"] for s in supplies if s.get("supplier")}
+            
+            avg_price = p.get("harga") or 0
 
             warehouses = p.get("product_warehouse", [])
             total_quantity = sum(w["quantity"] for w in warehouses)
@@ -75,17 +70,15 @@ def show():
                     df['Merek'].str.lower().str.contains(term, na=False)
                 ]
             
-            # Apply stock filter
             df = df[df['Total Kuantitas'] >= min_stock]
             
-            # Apply sorting
             if sort_by == "Stok (Tertinggi)":
                 df = df.sort_values("Total Kuantitas", ascending=False)
             elif sort_by == "Stok (Terendah)":
                 df = df.sort_values("Total Kuantitas", ascending=True)
             elif sort_by == "Harga":
                 df = df.sort_values("Harga Rata-rata", ascending=False)
-            else:  # Nama Produk
+            else: 
                 df = df.sort_values("Nama Produk")
             
             # Display stats
