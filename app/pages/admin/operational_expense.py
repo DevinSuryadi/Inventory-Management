@@ -6,6 +6,10 @@ import datetime
 def show():
     st.markdown("<h1 style='color: #e67e22;'>Biaya Operasional</h1>", unsafe_allow_html=True)
 
+    # Initialize form key for reset
+    if "expense_form_key" not in st.session_state:
+        st.session_state.expense_form_key = 0
+
     try:
         supabase = get_client()
         
@@ -28,14 +32,19 @@ def show():
         with tab1:
             st.subheader(f"Catat Biaya Operasional - {selected_store}")
             
-            with st.form("add_expense_form", border=True):
+            # Show success message if exists
+            if st.session_state.get("expense_success"):
+                st.success(st.session_state.expense_success)
+                del st.session_state.expense_success
+            
+            with st.form(f"add_expense_form_{st.session_state.expense_form_key}", border=True):
                 col_type, col_amount = st.columns(2)
                 
                 with col_type:
                     expense_type = st.text_input(
                         "Jenis Biaya*",
-                        placeholder="Contoh: Bensin, dll...",
-                        help="Ketik jenis biaya sesuai kebutuhan"
+                        placeholder="Contoh: Bensin, Listrik, Sewa, dll...",
+                        help="Ketik jenis biaya sesuai kebutuhan (bebas)"
                     )
                 
                 with col_amount:
@@ -48,7 +57,8 @@ def show():
                     expense_time = st.time_input("Waktu", value=datetime.datetime.now().time())
                 
                 description = st.text_area(
-                    "Keterangan", 
+                    "Keterangan",
+                    placeholder="Deskripsi tambahan (opsional)..."
                 )
                 
                 # Account selection
@@ -94,7 +104,8 @@ def show():
                             "p_created_by": st.session_state.get("username", "admin")
                         }).execute()
                         
-                        st.success(f"✅ Biaya berhasil dicatat! ID: {result.data}")
+                        st.session_state.expense_success = f"✅ Biaya '{expense_type}' sebesar Rp {amount:,.0f} berhasil dicatat!"
+                        st.session_state.expense_form_key += 1
                         st.rerun()
                     except Exception as e:
                         st.error(f"Gagal menyimpan biaya: {e}")
