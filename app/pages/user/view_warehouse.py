@@ -3,13 +3,17 @@ import pandas as pd
 from app.db import get_client
 
 def show():
-    st.title("Daftar Gudang (Global)")
-    st.info("Gudang bersifat global dan dapat digunakan oleh semua toko.")
+    st.title("Daftar Gudang")
+
+    store = st.session_state.get("store")
+    if not store:
+        st.warning("Sesi toko tidak valid. Silakan login kembali.")
+        return
 
     try:
         supabase = get_client()
 
-        response = supabase.table("warehouse_list").select("warehouseid, name").order("name", desc=False).execute()
+        response = supabase.table("warehouse_list").select("warehouseid, name").eq("store", store).order("name", desc=False).execute()
 
         warehouses = response.data
         if warehouses:

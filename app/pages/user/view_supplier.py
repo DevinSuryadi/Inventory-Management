@@ -26,18 +26,19 @@ def show():
             "supplierno": "No. Telepon",
             "address": "Alamat",
             "description": "Deskripsi",
-            "products_supplied": "Produk yang Disuplai"
+            "total_debt": "Total Hutang"
         })
 
-        df['Produk yang Disuplai'] = df['Produk yang Disuplai'].fillna('')
+        # Format total_debt as currency
+        if 'Total Hutang' in df.columns:
+            df['Total Hutang'] = df['Total Hutang'].apply(lambda x: f"Rp {x:,.0f}" if x else "Rp 0")
 
-        search_term = st.text_input("Cari berdasarkan Nama Supplier atau Produk yang Disuplai")
+        search_term = st.text_input("Cari berdasarkan Nama Supplier")
 
         if search_term:
             term = search_term.lower()
             df = df[
-                df['Nama Supplier'].str.lower().str.contains(term) |
-                df['Produk yang Disuplai'].str.lower().str.contains(term)
+                df['Nama Supplier'].str.lower().str.contains(term, na=False)
             ]
         
         if df.empty:

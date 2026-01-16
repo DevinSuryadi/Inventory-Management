@@ -24,14 +24,19 @@ def show():
 
             try:
                 supabase = get_client()
+                store = st.session_state.get("store")
                 
-                check_res = supabase.table("warehouse_list").select("warehouseid", count='exact').eq("name", warehouse_name.strip()).execute()
+                if not store:
+                    st.error("Sesi toko tidak valid. Silakan login kembali.")
+                    return
+                
+                check_res = supabase.table("warehouse_list").select("warehouseid", count='exact').eq("store", store).eq("name", warehouse_name.strip()).execute()
                 if check_res.count > 0:
-                    st.error(f"Gudang dengan nama '{warehouse_name}' sudah ada.")
+                    st.error(f"Gudang dengan nama '{warehouse_name}' sudah ada di toko ini.")
                     return
 
-                # Insert data ke tabel 'warehouse_list'
-                response = supabase.table("warehouse_list").insert({"name": warehouse_name.strip()}).execute()
+                # Insert data ke tabel 'warehouse_list' dengan store
+                response = supabase.table("warehouse_list").insert({"store": store, "name": warehouse_name.strip()}).execute()
                 
                 if response.data:
                     st.success(f"✅ Gudang '{warehouse_name}' berhasil ditambahkan.")

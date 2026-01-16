@@ -21,8 +21,8 @@ def show():
         # Supplier & Warehouse Selection
         st.markdown("### 1️⃣ Pilih Supplier & Gudang")
         
-        supplier_resp = supabase.table("supplier").select("supplierid, suppliername").order("suppliername").execute()
-        warehouse_resp = supabase.table("warehouse_list").select("warehouseid, name").order("name").execute()
+        supplier_resp = supabase.table("supplier").select("supplierid, suppliername").eq("store", store).order("suppliername").execute()
+        warehouse_resp = supabase.table("warehouse_list").select("warehouseid, name").eq("store", store).order("name").execute()
         
         supplier_map = {s['suppliername']: s['supplierid'] for s in supplier_resp.data or []}
         warehouse_map = {w['name']: w['warehouseid'] for w in warehouse_resp.data or []}
@@ -209,7 +209,6 @@ def show():
                         
                         st.success(f"✅ Transaksi pembelian berhasil dicatat! ID: {result.data}")
                         st.session_state.purchase_cart = []
-                        st.balloons()
                         st.rerun()
                     except Exception as e:
                         st.error(f"Gagal menyimpan transaksi: {e}")

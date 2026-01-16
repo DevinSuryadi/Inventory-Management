@@ -260,7 +260,6 @@ def show():
                                 pass
                             
                             st.success(f"✅ Gaji {selected_staff['nama']} berhasil dibayarkan!")
-                            st.balloons()
                             st.rerun()
                         except Exception as e:
                             st.error(f"Gagal membayar gaji: {e}")
