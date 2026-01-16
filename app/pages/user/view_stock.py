@@ -34,28 +34,34 @@ def show():
 
         rows = []
         for p in response.data:
-            supplies = p.get("productsupply", [])
-            supplier_names = {s["supplier"]["suppliername"] for s in supplies if s.get("supplier")}
+            supplies = p.get("productsupply", []) or []
+            supplier_names = set()
+            for s in supplies:
+                if s and s.get("supplier") and s["supplier"].get("suppliername"):
+                    supplier_names.add(s["supplier"]["suppliername"])
             
             avg_price = p.get("harga") or 0
 
-            warehouses = p.get("product_warehouse", [])
-            total_quantity = sum(w["quantity"] for w in warehouses)
-            warehouse_names = {w["warehouse_list"]["name"] for w in warehouses if w.get("warehouse_list")}
+            warehouses = p.get("product_warehouse", []) or []
+            total_quantity = sum(w.get("quantity", 0) for w in warehouses if w)
+            warehouse_names = set()
+            for w in warehouses:
+                if w and w.get("warehouse_list") and w["warehouse_list"].get("name"):
+                    warehouse_names.add(w["warehouse_list"]["name"])
 
             rows.append({
                 "ID": p["productid"],
-                "Nama Produk": p["productname"],
-                "Jenis": p["type"],
-                "Ukuran": p["size"],
-                "Warna": p["color"],
-                "Merek": p["brand"],
+                "Nama Produk": p["productname"] or "-",
+                "Jenis": p.get("type") or "-",
+                "Ukuran": p.get("size") or "-",
+                "Warna": p.get("color") or "-",
+                "Merek": p.get("brand") or "-",
                 "Harga Rata-rata": round(avg_price, 2),
                 "Total Kuantitas": total_quantity,
-                "Supplier": ", ".join(sorted(supplier_names)),
-                "Gudang": ", ".join(sorted(warehouse_names)),
-                "Deskripsi": p["description"],
-                "Update Terakhir": pd.to_datetime(p["updateat"]).strftime('%Y-%m-%d %H:%M') if p["updateat"] else None
+                "Supplier": ", ".join(sorted(supplier_names)) if supplier_names else "-",
+                "Gudang": ", ".join(sorted(warehouse_names)) if warehouse_names else "-",
+                "Deskripsi": p.get("description") or "-",
+                "Update Terakhir": pd.to_datetime(p["updateat"]).strftime('%Y-%m-%d %H:%M') if p.get("updateat") else "-"
             })
 
         if rows:

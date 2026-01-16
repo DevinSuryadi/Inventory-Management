@@ -15,9 +15,9 @@ def show():
 
     supabase = get_client()
 
-    # Fetch existing warehouses, suppliers, and accounts
-    warehouses = supabase.table("warehouse_list").select("warehouseid, name").execute()
-    suppliers = supabase.table("supplier").select("supplierid, suppliername").execute()
+    # Fetch existing warehouses, suppliers, and accounts (filtered by store)
+    warehouses = supabase.table("warehouse_list").select("warehouseid, name").eq("store", store).execute()
+    suppliers = supabase.table("supplier").select("supplierid, suppliername").eq("store", store).execute()
     accounts = supabase.table("accounts").select("account_id, account_name, balance").eq("store", store).execute()
     
     warehouse_list = warehouses.data if warehouses.data else []
@@ -235,26 +235,53 @@ def show():
                         st.error("Harap centang konfirmasi terlebih dahulu!")
                     else:
                         df_clean = df.fillna("")
-                        df_json = df_clean.astype(str).to_json(orient='records')
+                        
+                        # Convert dataframe to products JSON format expected by SQL function
+                        products_list = []
+                        for _, row in df_clean.iterrows():
+                            product = {
+                                "productname": str(row['Nama Produk']).strip(),
+                                "type": str(row.get('Jenis', 'Umum')).strip() or 'Umum',
+                                "size": str(row.get('Ukuran', '')).strip() or None,
+                                "color": str(row.get('Warna', '')).strip() or None,
+                                "brand": str(row.get('Merek', '')).strip() or None,
+                                "harga": float(row.get('Harga Beli', 0) or 0),
+                                "quantity": int(float(row.get('Jumlah', 0) or 0)),
+                                "description": str(row.get('Deskripsi', '')).strip() or None
+                            }
+                            products_list.append(product)
+                        
+                        import json
+                        products_json = json.dumps(products_list)
+                        
+                        # Calculate total for payment
+                        total_amount = sum(p['harga'] * p['quantity'] for p in products_list)
                         
                         with st.spinner("Sedang mengimpor data ke database..."):
                             try:
-                                # Use smart import function
+                                # Use smart import function with correct parameter names
                                 params = {
-                                    "products_json": df_json,
                                     "p_store": store,
-                                    "p_default_warehouse_id": default_warehouse_id,
-                                    "p_default_supplier_id": default_supplier_id,
-                                    "p_payment_type": payment_type,
+                                    "p_supplier_id": default_supplier_id,
+                                    "p_warehouse_id": default_warehouse_id,
+                                    "p_products": products_json,
                                     "p_account_id": selected_account_id,
-                                    "p_due_date": due_date.isoformat() if due_date else None,
-                                    "p_created_by": username
+                                    "p_payment_type": payment_type,
+                                    "p_payment_amount": total_amount if payment_type == 'cash' else None,
+                                    "p_import_date": datetime.datetime.now().isoformat(),
+                                    "p_created_by": username,
+                                    "p_due_date": due_date.isoformat() if due_date else None
                                 }
                                 result = supabase.rpc("bulk_import_smart", params).execute()
                                 
-                                if result.data and "Berhasil" in str(result.data):
-                                    st.success(f"✅ {result.data}")
-                                    st.balloons()
+                                if result.data:
+                                    # Result is a list with one record containing: new_count, existing_count, total_count, transaction_id
+                                    res = result.data[0] if isinstance(result.data, list) else result.data
+                                    new_count = res.get('new_count', 0)
+                                    existing_count = res.get('existing_count', 0)
+                                    total_count = res.get('total_count', 0)
+                                    
+                                    st.success(f"✅ Berhasil mengimpor {total_count} produk! ({new_count} baru, {existing_count} diupdate)")
                                     st.info("Cek **Riwayat Pembelian** untuk transaksi dan **Lihat Stok** untuk stok produk.")
                                 else:
                                     st.error(f"Terjadi kesalahan saat impor: {result.data}")

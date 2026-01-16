@@ -21,7 +21,7 @@ def show():
         # Warehouse Selection
         st.markdown("### 1️⃣ Pilih Gudang & Pelanggan")
         
-        warehouse_resp = supabase.table("warehouse_list").select("warehouseid, name").order("name").execute()
+        warehouse_resp = supabase.table("warehouse_list").select("warehouseid, name").eq("store", store).order("name").execute()
         warehouse_map = {w['name']: w['warehouseid'] for w in warehouse_resp.data or []}
         
         if not warehouse_map:
@@ -225,7 +225,6 @@ def show():
                         
                         st.success(f"✅ Transaksi penjualan berhasil dicatat! ID: {result.data}")
                         st.session_state.sale_cart = []
-                        st.balloons()
                         st.rerun()
                     except Exception as e:
                         st.error(f"Gagal menyimpan transaksi: {e}")

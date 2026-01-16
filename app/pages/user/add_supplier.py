@@ -28,13 +28,19 @@ def show():
 
             try:
                 supabase = get_client()
+                store = st.session_state.get("store")
                 
-                check_res = supabase.table("supplier").select("supplierid").eq("suppliername", supplier_name.strip()).execute()
+                if not store:
+                    st.error("Sesi toko tidak valid. Silakan login kembali.")
+                    return
+                
+                check_res = supabase.table("supplier").select("supplierid").eq("store", store).eq("suppliername", supplier_name.strip()).execute()
                 if check_res.data:
-                    st.error(f"Supplier dengan nama '{supplier_name}' sudah ada.")
+                    st.error(f"Supplier dengan nama '{supplier_name}' sudah ada di toko ini.")
                     return
 
                 data_to_insert = {
+                    "store": store,
                     "suppliername": supplier_name.strip(),
                     "supplierno": supplier_no.strip() if supplier_no.strip() else None,
                     "address": address.strip() if address.strip() else None,

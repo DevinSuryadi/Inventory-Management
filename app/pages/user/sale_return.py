@@ -31,11 +31,11 @@ def show():
             )
         
         with col_wh:
-            warehouse_resp = supabase.table("warehouse_list").select("warehouseid, name").order("name").execute()
+            warehouse_resp = supabase.table("warehouse_list").select("warehouseid, name").eq("store", store).order("name").execute()
             warehouse_map = {w['name']: w['warehouseid'] for w in warehouse_resp.data or []}
             
             if not warehouse_map:
-                st.error("Belum ada gudang terdaftar.")
+                st.error("Belum ada gudang terdaftar untuk toko ini.")
                 return
             
             selected_warehouse_name = st.selectbox(
@@ -233,7 +233,6 @@ def show():
                         
                         st.success(f"✅ Retur penjualan berhasil dicatat! ID: {result.data}")
                         st.session_state.sale_return_cart = []
-                        st.balloons()
                         st.rerun()
                     except Exception as e:
                         st.error(f"❌ Gagal memproses retur: {e}")

@@ -53,7 +53,7 @@ def show():
                     "qty": item['quantity']
                 } for item in stock_data
             }
-            all_warehouses_resp = supabase.table("warehouse_list").select("warehouseid, name").execute()
+            all_warehouses_resp = supabase.table("warehouse_list").select("warehouseid, name").eq("store", store).execute()
             for wh in all_warehouses_resp.data:
                 label = f"{wh['name']} (Stok: 0)"
                 if label not in warehouse_options:
