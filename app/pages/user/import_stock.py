@@ -15,7 +15,6 @@ def show():
 
     supabase = get_client()
 
-    # Fetch existing warehouses, suppliers, and accounts (filtered by store)
     warehouses = supabase.table("warehouse_list").select("warehouseid, name").eq("store", store).execute()
     suppliers = supabase.table("supplier").select("supplierid, suppliername").eq("store", store).execute()
     accounts = supabase.table("accounts").select("account_id, account_name, balance").eq("store", store).execute()
@@ -27,19 +26,16 @@ def show():
     warehouse_names = [w['name'] for w in warehouse_list]
     supplier_names = [s['suppliername'] for s in supplier_list]
 
-    # Check if warehouses exist
     if not warehouse_list:
         st.error("⚠️ Belum ada gudang yang terdaftar. Silakan daftarkan gudang terlebih dahulu.")
         return
 
-    # Import Settings
     st.markdown("---")
     st.subheader("Pengaturan Import")
     
     col_set1, col_set2 = st.columns(2)
     
     with col_set1:
-        # Default Warehouse
         warehouse_options = {w['name']: w['warehouseid'] for w in warehouse_list}
         default_warehouse = st.selectbox(
             "Gudang Default",
@@ -71,7 +67,7 @@ def show():
             help="Untuk produk yang diimpor dengan jumlah > 0"
         )
         
-        # Account (for cash payment)
+        # Account 
         selected_account_id = None
         due_date = None
         
@@ -84,7 +80,6 @@ def show():
             else:
                 st.warning("Tidak ada akun kas. Pembayaran tidak akan mengurangi saldo.")
         else:
-            # Due date for credit
             due_date = st.date_input(
                 "Jatuh Tempo (TOP)",
                 value=datetime.date.today() + datetime.timedelta(days=30),
@@ -167,7 +162,6 @@ def show():
             if missing_cols:
                 st.error(f"❌ File Excel tidak valid. Kolom berikut tidak ditemukan: **{', '.join(missing_cols)}**")
             else:
-                # Fill missing optional columns with defaults
                 if "Jumlah" not in df.columns:
                     df["Jumlah"] = 0
                 if "Harga Beli" not in df.columns:
@@ -186,7 +180,6 @@ def show():
                 
                 st.success(f"✅ File valid! Ditemukan **{len(df)} produk** untuk diimpor.")
                 
-                # Validate warehouses in uploaded file (only if provided)
                 df_warehouses = df["Gudang"].dropna().unique().tolist()
                 df_warehouses = [w for w in df_warehouses if str(w).strip() != ""]
                 invalid_warehouses = [w for w in df_warehouses if str(w).strip().lower() not in [wh.lower() for wh in warehouse_names]]
@@ -236,7 +229,6 @@ def show():
                     else:
                         df_clean = df.fillna("")
                         
-                        # Convert dataframe to products JSON format expected by SQL function
                         products_list = []
                         for _, row in df_clean.iterrows():
                             product = {
@@ -254,12 +246,10 @@ def show():
                         import json
                         products_json = json.dumps(products_list)
                         
-                        # Calculate total for payment
                         total_amount = sum(p['harga'] * p['quantity'] for p in products_list)
                         
                         with st.spinner("Sedang mengimpor data ke database..."):
                             try:
-                                # Use smart import function with correct parameter names
                                 params = {
                                     "p_store": store,
                                     "p_supplier_id": default_supplier_id,
@@ -275,7 +265,6 @@ def show():
                                 result = supabase.rpc("bulk_import_smart", params).execute()
                                 
                                 if result.data:
-                                    # Result is a list with one record containing: new_count, existing_count, total_count, transaction_id
                                     res = result.data[0] if isinstance(result.data, list) else result.data
                                     new_count = res.get('new_count', 0)
                                     existing_count = res.get('existing_count', 0)

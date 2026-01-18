@@ -9,7 +9,6 @@ def show():
     supabase = get_client()
     store = st.session_state.get("store")
     
-    # Initialize form key for reset
     if "staff_form_key" not in st.session_state:
         st.session_state.staff_form_key = 0
     
@@ -19,14 +18,12 @@ def show():
     with tab1:
         st.subheader("Daftar Pegawai per Toko")
         try:
-            # Get list of stores
             users_resp = supabase.table("users").select("store").neq("role", "admin").eq("role", "pegawai").execute()
             stores = sorted(list(set([user['store'] for user in users_resp.data if user['store']])))
             
             if stores:
                 selected_store = st.selectbox("Pilih Toko", options=stores, key="view_staff_store")
                 
-                # Get staff for selected store
                 staff_resp = supabase.table("pegawai").select("*").eq("store", selected_store).order("created_at", desc=True).execute()
                 
                 if staff_resp.data:
@@ -55,7 +52,6 @@ def show():
     with tab2:
         st.subheader("Daftarkan Pegawai Baru")
         try:
-            # Get list of stores
             users_resp = supabase.table("users").select("store").neq("role", "admin").eq("role", "pegawai").execute()
             stores = sorted(list(set([user['store'] for user in users_resp.data if user['store']])))
             
@@ -130,14 +126,12 @@ def show():
         st.subheader("Hapus Pegawai")
         
         try:
-            # Get list of stores
             users_resp = supabase.table("users").select("store").neq("role", "admin").eq("role", "pegawai").execute()
             stores = sorted(list(set([user['store'] for user in users_resp.data if user['store']])))
             
             if stores:
                 selected_store = st.selectbox("Pilih Toko", options=stores, key="delete_staff_store")
                 
-                # Get staff for selected store
                 staff_resp = supabase.table("pegawai").select("pegawai_id, nama, gaji_bulanan").eq("store", selected_store).order("nama", desc=False).execute()
                 
                 if staff_resp.data:

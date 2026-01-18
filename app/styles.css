@@ -1,5 +1,5 @@
 /*   
- INVENTORY SYSTEM - PROFESSIONAL DARK THEME
+ INVENTORY SYSTEM
 */
 
 :root {
@@ -67,10 +67,10 @@ SIDEBAR
 }
 
 /*   
-BUTTONS - Professional Color Scheme
+BUTTONS
 */
 
-/* Default Button (Blue - Primary Action) */
+/* Default Button */
 .stButton > button {
     background-color: var(--accent-blue) !important;
     color: #ffffff !important;
@@ -93,7 +93,7 @@ BUTTONS - Professional Color Scheme
     transform: translateY(0) !important;
 }
 
-/* Primary Type Button (Blue) */
+/* Primary Type Button */
 .stButton > button[kind="primary"],
 .stButton > button[data-testid="baseButton-primary"] {
     background-color: var(--accent-blue) !important;
@@ -381,11 +381,10 @@ RESPONSIVE ADJUSTMENTS
 }
 
 /*   
-DELETE BUTTON STYLING (RED)
-   Secondary buttons are neutral, use custom class for delete
+DELETE BUTTON
 */
 
-/* Secondary buttons - neutral gray style */
+/* Secondary buttons */
 .stButton > button[kind="secondary"],
 button[data-testid="baseButton-secondary"] {
     background-color: var(--bg-tertiary) !important;

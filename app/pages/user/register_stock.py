@@ -4,13 +4,11 @@ from app.db import get_client
 def show():
     st.title("Register Stock")
 
-    # Ambil informasi toko dari session
     store = st.session_state.get("store")
     if not store:
         st.warning("Sesi tidak valid. Silakan login kembali.")
         return
 
-    # Initialize form key for reset
     if "register_stock_form_key" not in st.session_state:
         st.session_state.register_stock_form_key = 0
 
@@ -30,7 +28,6 @@ def show():
             if not confirm:
                 st.error("Harap centang konfirmasi terlebih dahulu!")
                 st.stop()
-            # Validasi input wajib
             if not product_name.strip():
                 st.warning("Nama Produk wajib diisi.")
                 return
@@ -52,7 +49,6 @@ def show():
                 
                 if response.data:
                     st.success(f"✅ Produk '{product_name}' berhasil didaftarkan!")
-                    # Reset form
                     st.session_state.register_stock_form_key += 1
                     st.rerun()
                 else:

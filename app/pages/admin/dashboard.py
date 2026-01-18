@@ -44,11 +44,10 @@ def show():
         st.markdown("---")
 
         if selected_store and start_date and end_date:
-            # SECTION 1: Business Performance Summary
+            # Business Performance Summary
             st.markdown("<h3 style='color: var(--accent);'>Ringkasan Performa Bisnis</h3>", unsafe_allow_html=True)
             
             try:
-                # Get business performance data
                 perf_resp = supabase.rpc("get_store_business_performance", {
                     "store_input": selected_store,
                     "start_date": start_date.isoformat(),
@@ -83,7 +82,7 @@ def show():
                 with col_r1:
                     total_revenue = perf.get('total_revenue', 0) or 0
                     st.metric(
-                        "Laba Kotor ", 
+                        "Total Penjualan", 
                         f"Rp {total_revenue:,.0f}",
                         help="Total pendapatan dari penjualan"
                     )
@@ -107,7 +106,7 @@ def show():
                 
                 st.divider()
                 
-                # Row 3: Expenses
+                # Expenses
                 st.markdown("#### Biaya Operasional")
                 col_e1, col_e2, col_e3 = st.columns(3)
                 with col_e1:
@@ -150,7 +149,6 @@ def show():
             except Exception as e:
                 st.warning(f"Data belum tersedia. SQL ({e})")
                 
-                # Fallback ke KPI lama
                 try:
                     kpis_resp = supabase.rpc("get_store_kpis", {
                         "store_input": selected_store,

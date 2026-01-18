@@ -6,14 +6,12 @@ import datetime
 def show():
     st.markdown("<h1 style='color: #e67e22;'>Biaya Operasional</h1>", unsafe_allow_html=True)
 
-    # Initialize form key for reset
     if "expense_form_key" not in st.session_state:
         st.session_state.expense_form_key = 0
 
     try:
         supabase = get_client()
         
-        # Get list of stores for admin
         users_resp = supabase.table("users").select("store").eq("role", "pegawai").execute()
         stores = sorted(list(set([user['store'] for user in users_resp.data if user['store']])))
         
@@ -21,7 +19,6 @@ def show():
             st.warning("Belum ada toko yang terdaftar.")
             return
 
-        # Store selector
         selected_store = st.selectbox("Pilih Toko", options=stores, key="expense_store_select")
         
         st.divider()
@@ -31,8 +28,7 @@ def show():
         # Add Expense
         with tab1:
             st.subheader(f"Catat Biaya Operasional - {selected_store}")
-            
-            # Show success message if exists
+        
             if st.session_state.get("expense_success"):
                 st.success(st.session_state.expense_success)
                 del st.session_state.expense_success
@@ -151,7 +147,6 @@ def show():
                         st.dataframe(df[['ID', 'Tanggal', 'Jenis', 'Jumlah', 'Keterangan']], 
                                    use_container_width=True, hide_index=True)
                         
-                        # Summary by type
                         st.subheader("Ringkasan per Jenis Biaya")
                         summary_df = pd.DataFrame(results).groupby('expense_type').agg({
                             'amount': 'sum',
@@ -162,7 +157,6 @@ def show():
                         summary_df['Total'] = summary_df['Total'].apply(lambda x: f"Rp {x:,.0f}")
                         st.dataframe(summary_df, use_container_width=True, hide_index=True)
                         
-                        # Total
                         total = sum([r['amount'] for r in results])
                         st.metric("Total Biaya Periode Ini", f"Rp {total:,.0f}")
                         
@@ -173,7 +167,6 @@ def show():
         with tab3:
             st.subheader(f"Bayar Gaji Karyawan - {selected_store}")
             
-            # Get staff list
             staff_resp = supabase.table("pegawai").select(
                 "pegawai_id, nama, gaji_bulanan, tanggal_pembayaran"
             ).eq("store", selected_store).order("nama").execute()
@@ -235,7 +228,6 @@ def show():
                         pay_datetime = datetime.datetime.combine(pay_date, pay_time)
                         
                         try:
-                            # Record as operational expense with type 'salary'
                             result = supabase.rpc("record_operational_expense", {
                                 "p_store": selected_store,
                                 "p_expense_type": "salary",
@@ -246,8 +238,7 @@ def show():
                                 "p_expense_date": pay_datetime.isoformat(),
                                 "p_created_by": st.session_state.get("username", "admin")
                             }).execute()
-                            
-                            # Also update pegawai_payment table
+
                             try:
                                 supabase.table("pegawai_payment").insert({
                                     "pegawai_id": selected_staff['pegawai_id'],

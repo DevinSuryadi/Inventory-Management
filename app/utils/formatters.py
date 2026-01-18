@@ -15,7 +15,6 @@ def format_currency_no_decimal(value: float, prefix: str = "Rp ") -> str:
 
 def format_datetime(dt: Union[datetime, str], format: str = "%d/%m/%Y %H:%M") -> str:
     if isinstance(dt, str):
-        # Try to parse string to datetime
         try:
             dt = datetime.fromisoformat(dt)
         except:
@@ -121,7 +120,6 @@ def shorten_text(text: str, max_length: int = 50, suffix: str = "...") -> str:
         return text[:max_length - len(suffix)] + suffix
     return text
 
-# Dictionary untuk easy import
 FORMATTERS = {
     'currency': format_currency,
     'datetime': format_datetime,
