@@ -78,7 +78,7 @@ def show():
 
                     df['Harga Satuan'] = df['Harga Satuan'].apply(lambda x: f"Rp {x:,.0f}")
                     df['Total Harga'] = df['Total Harga'].apply(lambda x: f"Rp {x:,.0f}")
-                    df['Tanggal'] = pd.to_datetime(df['Tanggal']).dt.strftime('%Y-%m-%d %H:%M')
+                    df['Tanggal'] = pd.to_datetime(df['Tanggal'], format='ISO8601').dt.strftime('%Y-%m-%d %H:%M')
                     
                     if 'No. Nota' in df.columns:
                         df['No. Nota'] = df['No. Nota'].fillna('-')
