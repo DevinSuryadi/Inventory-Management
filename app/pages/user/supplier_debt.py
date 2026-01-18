@@ -129,6 +129,16 @@ def show():
                                     payment_time = st.time_input("Waktu Bayar", value=datetime.datetime.now().time(), key=f"pay_time_{row['debtid']}_1")
 
                                 payment_amount = st.number_input("Jumlah Pembayaran (Rp)", min_value=0, max_value=int(sisa_utang), step=1000, format="%d", key=f"pay_amt_{row['debtid']}_1")
+                                
+                                # Account selection for arus kas
+                                accounts_resp = supabase.table("accounts").select("account_id, account_name").eq("store", store).execute()
+                                account_options = {acc['account_name']: acc['account_id'] for acc in accounts_resp.data or []}
+                                if account_options:
+                                    selected_account = st.selectbox("Bayar dari Rekening", options=list(account_options.keys()), key=f"pay_acc_{row['debtid']}_1")
+                                else:
+                                    selected_account = None
+                                    st.warning("Tidak ada rekening tersedia")
+                                
                                 payment_note = st.text_area("Catatan Pembayaran", value="Pembayaran utang supplier", key=f"pay_note_{row['debtid']}_1")
                                 
                                 confirm = st.checkbox("Konfirmasi pembayaran", key=f"confirm_{row['debtid']}")
@@ -138,6 +148,8 @@ def show():
                                 if submitted:
                                     if not confirm:
                                         st.error("Harap centang konfirmasi terlebih dahulu!")
+                                    elif not selected_account:
+                                        st.error("Pilih rekening untuk pembayaran!")
                                     else:
                                         payment_datetime = datetime.datetime.combine(payment_date, payment_time)
                                         try:
@@ -145,7 +157,8 @@ def show():
                                                 "p_debtid": row['debtid'],
                                                 "p_amount": payment_amount,
                                                 "p_note": payment_note,
-                                                "p_transaction_date": payment_datetime.isoformat()
+                                                "p_transaction_date": payment_datetime.isoformat(),
+                                                "p_account_id": account_options.get(selected_account)
                                             }).execute()
                                             st.success("✅ Pembayaran berhasil dicatat!")
                                             st.rerun()

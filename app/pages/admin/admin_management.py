@@ -27,7 +27,6 @@ def show():
                 stores = sorted(list(set([user['store'] for user in users_resp.data if user['store']])))
                 
                 if stores:
-                    # Count staff per toko
                     store_data = []
                     for store in stores:
                         count_resp = supabase.table("users").select("*", count='exact').eq("store", store).eq("role", "pegawai").execute()
@@ -62,7 +61,6 @@ def show():
                     if not confirm_add:
                         st.error("Harap centang konfirmasi terlebih dahulu!")
                         st.stop()
-                    # Validasi
                     if not store_name.strip() or not store_display_name.strip():
                         st.error("Nama toko dan nama tampilan harus diisi!")
                         st.stop()
@@ -78,16 +76,13 @@ def show():
                     try:
                         from werkzeug.security import generate_password_hash
                         
-                        # Cek duplikasi username
                         check_user = supabase.table("users").select("*").eq("username", store_name).execute()
                         if check_user.data:
                             st.error(f"Username '{store_name}' sudah ada!")
                             st.stop()
                         
-                        # Hash password
                         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
                         
-                        # Buat user toko (role='pegawai', store=store_display_name)
                         new_user = {
                             "username": store_name,
                             "password": hashed_password,

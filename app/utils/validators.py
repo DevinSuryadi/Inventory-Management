@@ -37,10 +37,8 @@ def validate_warehouse_name(name: str) -> tuple[bool, str]:
 def validate_phone_number(phone: str) -> tuple[bool, str]:
     if not phone or not phone.strip():
         return True, "" 
-    # Remove common separators
     cleaned = phone.replace("-", "").replace(" ", "").replace("+", "")
     
-    # Check if valid Indonesian phone
     if cleaned.startswith("62"):
         if len(cleaned) < 10 or len(cleaned) > 13:
             return False, "Nomor telepon tidak valid (format: +62 8xx-xxxx-xxxx)."

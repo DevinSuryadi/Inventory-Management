@@ -4,7 +4,6 @@ from app.db import get_client
 def show():
     st.title("Tambahkan Gudang Baru")
 
-    # Initialize form key for reset
     if "register_warehouse_form_key" not in st.session_state:
         st.session_state.register_warehouse_form_key = 0
 
@@ -35,12 +34,10 @@ def show():
                     st.error(f"Gudang dengan nama '{warehouse_name}' sudah ada di toko ini.")
                     return
 
-                # Insert data ke tabel 'warehouse_list' dengan store
                 response = supabase.table("warehouse_list").insert({"store": store, "name": warehouse_name.strip()}).execute()
                 
                 if response.data:
                     st.success(f"✅ Gudang '{warehouse_name}' berhasil ditambahkan.")
-                    # Reset form
                     st.session_state.register_warehouse_form_key += 1
                     st.rerun()
                 else:

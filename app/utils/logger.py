@@ -5,11 +5,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-# Create logs directory jika tidak ada
 LOGS_DIR = Path("logs")
 LOGS_DIR.mkdir(exist_ok=True)
 
-# Custom JSON formatter untuk structured logging
 class JSONFormatter(logging.Formatter):
     
     def format(self, record: logging.LogRecord) -> str:
@@ -22,12 +20,10 @@ class JSONFormatter(logging.Formatter):
             "function": record.funcName,
             "line": record.lineno,
         }
-        
-        # Add exception info jika ada
+
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
         
-        # Add extra fields jika ada
         if hasattr(record, "user"):
             log_data["user"] = record.user
         if hasattr(record, "store"):
@@ -41,10 +37,10 @@ def setup_logger(name: str, log_file: Optional[str] = None, level: int = logging
     logger = logging.getLogger(name)
     logger.setLevel(level)
     
-    # Clear existing handlers to avoid duplicates
+    # Clear existing handlers 
     logger.handlers = []
     
-    # Console handler - simple format
+    # Console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
     console_formatter = logging.Formatter(
@@ -54,7 +50,7 @@ def setup_logger(name: str, log_file: Optional[str] = None, level: int = logging
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
     
-    # File handler - JSON format untuk machine-readable logs
+    # File handler
     if log_file:
         log_path = LOGS_DIR / log_file
         file_handler = logging.handlers.RotatingFileHandler(
@@ -75,7 +71,7 @@ transaction_logger = setup_logger('transactions', 'transactions.log')
 auth_logger = setup_logger('auth', 'auth.log')
 error_logger = setup_logger('errors', 'errors.log', level=logging.ERROR)
 
-# Utility functions untuk common logging tasks
+# Utility functions
 
 def log_login(username: str, role: str, store: str, success: bool = True):
     """Log user login attempt."""

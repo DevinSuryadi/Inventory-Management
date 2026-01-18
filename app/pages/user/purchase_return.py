@@ -14,14 +14,12 @@ def show():
     try:
         supabase = get_client()
         
-        # Initialize cart in session state
         if 'purchase_return_cart' not in st.session_state:
             st.session_state.purchase_return_cart = []
 
-        # Supplier & Warehouse Selection
         st.markdown("### 1️⃣ Pilih Supplier & Gudang")
         
-        col_sup, col_wh = st.columns(2)
+        col_sup, col_wh, col_invoice = st.columns(3)
         
         with col_sup:
             supplier_resp = supabase.table("supplier").select("supplierid, suppliername").eq("store", store).order("suppliername").execute()
@@ -51,6 +49,9 @@ def show():
                 options=warehouse_map.keys(), 
                 key="pr_warehouse"
             )
+        
+        with col_invoice:
+            invoice_number = st.text_input("No. Nota Retur (opsional)", key="pr_invoice", placeholder="Contoh: RTR-001")
 
         st.divider()
 
@@ -101,7 +102,6 @@ def show():
                 if selected_product_label and quantity > 0:
                     product_data = product_map[selected_product_label]
                     
-                    # Check stock availability
                     stock_resp = supabase.table("product_warehouse").select("quantity").eq(
                         "productid", product_data['productid']
                     ).eq("warehouseid", warehouse_map[selected_warehouse_name]).execute()
@@ -164,16 +164,17 @@ def show():
         if cart:
             st.markdown("### 4️⃣ Detail Retur")
             
-            # Calculate total cart
             total_cart = sum(item['subtotal'] for item in cart)
             
-            # Get supplier debt info
             supplier_id = supplier_map[selected_supplier_name]
-            debt_resp = supabase.rpc("get_supplier_debt_total", {
-                "p_store": store, 
-                "p_supplier_id": supplier_id
-            }).execute()
-            supplier_total_debt = debt_resp.data if debt_resp.data else 0
+            try:
+                debt_resp = supabase.rpc("get_supplier_debt_total", {
+                    "p_store": store, 
+                    "p_supplier_id": supplier_id
+                }).execute()
+                supplier_total_debt = debt_resp.data if debt_resp.data else 0
+            except:
+                supplier_total_debt = 0
             
             with st.form("purchase_return_form", border=True):
                 col_type, col_reason = st.columns(2)
@@ -189,7 +190,6 @@ def show():
                         }.get(x, x)
                     )
                     
-                    # Show info based on return type
                     if return_type == "refund":
                         st.info("Supplier mengembalikan uang ke rekening toko.")
                     elif return_type == "replacement":
@@ -217,7 +217,6 @@ def show():
                 with col_time:
                     return_time = st.time_input("Waktu", value=datetime.datetime.now().time())
                 
-                # Account selection for refund
                 accounts_resp = supabase.table("accounts").select("account_id, account_name").eq("store", store).execute()
                 account_map = {acc['account_name']: acc['account_id'] for acc in accounts_resp.data or []}
                 
@@ -246,7 +245,6 @@ def show():
                         
                     return_datetime = datetime.datetime.combine(return_date, return_time)
                     
-                    # Prepare items for RPC
                     items_json = json.dumps([{
                         'product_id': item['product_id'],
                         'quantity': item['qty'],
@@ -264,7 +262,8 @@ def show():
                             "p_description": description,
                             "p_account_id": account_map.get(selected_account) if selected_account else None,
                             "p_return_date": return_datetime.isoformat(),
-                            "p_created_by": st.session_state.get("username", "system")
+                            "p_created_by": st.session_state.get("username", "system"),
+                            "p_invoice_number": invoice_number if invoice_number else None
                         }).execute()
                         
                         st.success(f"✅ Retur pembelian berhasil dicatat! ID: {result.data}")

@@ -68,7 +68,6 @@ def delete_confirmation(
         
         st.divider()
         
-        # Konfirmasi hapus dengan mengetik nama item
         confirmation_text = st.text_input(
             f'Ketik "{item_name}" untuk mengkonfirmasi penghapusan:',
             key=f"{key}_confirm_text"
@@ -101,7 +100,6 @@ def transaction_confirmation(
     def _transaction_dialog():
         st.markdown(f"### {transaction_type}")
         
-        # Tampilkan detail item
         st.markdown("**Daftar Item:**")
         for idx, item in enumerate(items, 1):
             subtotal = item.get('qty', 0) * item.get('price', 0)
@@ -109,11 +107,9 @@ def transaction_confirmation(
         
         st.divider()
         
-        # Total
         st.markdown(f"### Total: Rp {total_amount:,.0f}")
         st.markdown(f"**Pembayaran:** {'Cash' if payment_type == 'cash' else 'Kredit'}")
         
-        # Info tambahan
         if additional_info:
             st.markdown("**Info Tambahan:**")
             for label, value in additional_info.items():

@@ -21,7 +21,7 @@ def show():
         #  Customer & Warehouse Selection 
         st.markdown("### 1️⃣ Informasi Pelanggan & Gudang")
         
-        col_cust, col_wh = st.columns(2)
+        col_cust, col_wh, col_invoice = st.columns(3)
         
         with col_cust:
             customer_name = st.text_input(
@@ -44,6 +44,9 @@ def show():
                 key="sr_warehouse",
                 help="Barang yang diretur akan masuk ke gudang ini"
             )
+        
+        with col_invoice:
+            invoice_number = st.text_input("No. Nota Retur (opsional)", key="sr_invoice", placeholder="Contoh: RTR-001")
 
         st.divider()
 
@@ -228,7 +231,8 @@ def show():
                             "p_description": description,
                             "p_account_id": account_map.get(selected_account) if selected_account else None,
                             "p_return_date": return_datetime.isoformat(),
-                            "p_created_by": st.session_state.get("username", "system")
+                            "p_created_by": st.session_state.get("username", "system"),
+                            "p_invoice_number": invoice_number if invoice_number else None
                         }).execute()
                         
                         st.success(f"✅ Retur penjualan berhasil dicatat! ID: {result.data}")
