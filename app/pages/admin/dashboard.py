@@ -48,7 +48,7 @@ def show():
             st.markdown("<h3 style='color: var(--accent);'>Ringkasan Performa Bisnis</h3>", unsafe_allow_html=True)
             
             try:
-                perf_resp = supabase.rpc("get_store_business_performance", {
+                perf_resp = supabase.rpc("get_store_business_performance_v2", {
                     "store_input": selected_store,
                     "start_date": start_date.isoformat(),
                     "end_date": (end_date + datetime.timedelta(days=1)).isoformat()
@@ -78,21 +78,52 @@ def show():
                 
                 # Revenue & Profit
                 st.markdown("#### Pendapatan & Laba")
-                col_r1, col_r2, col_r3 = st.columns(3)
-                with col_r1:
-                    total_revenue = perf.get('total_revenue', 0) or 0
+                
+                stock_revenue = perf.get('stock_revenue', 0) or 0
+                non_stock_revenue = perf.get('non_stock_revenue', 0) or 0
+                total_revenue = perf.get('total_revenue', 0) or 0
+                stock_tx_count = perf.get('stock_transaction_count', 0) or 0
+                non_stock_tx_count = perf.get('non_stock_transaction_count', 0) or 0
+                
+                col_s1, col_s2, col_s3 = st.columns(3)
+                with col_s1:
+                    st.metric(
+                        "Penjualan Stok", 
+                        f"Rp {stock_revenue:,.0f}",
+                        delta=f"{stock_tx_count} transaksi",
+                        help="Pendapatan dari penjualan barang dengan stok"
+                    )
+                with col_s2:
+                    st.metric(
+                        "Penjualan Non-Stok", 
+                        f"Rp {non_stock_revenue:,.0f}",
+                        delta=f"{non_stock_tx_count} transaksi",
+                        help="Pendapatan dari penjualan tanpa stok "
+                    )
+                with col_s3:
                     st.metric(
                         "Total Penjualan", 
                         f"Rp {total_revenue:,.0f}",
-                        help="Total pendapatan dari penjualan"
+                        help="Total pendapatan = Penjualan Stok + Penjualan Non-Stok"
+                    )
+                
+                # Baris 2: Profit
+                col_r1, col_r2, col_r3 = st.columns(3)
+                with col_r1:
+                    stock_profit = stock_revenue - hpp  # Laba dari stok
+                    st.metric(
+                        "Laba Penjualan Stok", 
+                        f"Rp {stock_profit:,.0f}",
+                        delta=f"Margin: {(stock_profit/stock_revenue*100):.1f}%" if stock_revenue > 0 else "0%",
+                        help="Laba Penjualan Stok = Penjualan Stok - HPP"
                     )
                 with col_r2:
                     gross_profit = perf.get('gross_profit', 0) or 0
                     st.metric(
-                        "Gross Profit", 
+                        "Gross Profit (Total)", 
                         f"Rp {gross_profit:,.0f}",
                         delta=f"Margin: {(gross_profit/total_revenue*100):.1f}%" if total_revenue > 0 else "0%",
-                        help="Laba Kotor = Penjualan - HPP"
+                        help="Laba Kotor = (Penjualan Stok - HPP) + Penjualan Non-Stok"
                     )
                 with col_r3:
                     net_profit = perf.get('net_profit', 0) or 0
