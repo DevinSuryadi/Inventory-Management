@@ -29,8 +29,8 @@ def show():
                     st.error("Sesi toko tidak valid. Silakan login kembali.")
                     return
                 
-                check_res = supabase.table("warehouse_list").select("warehouseid", count='exact').eq("store", store).eq("name", warehouse_name.strip()).execute()
-                if check_res.count > 0:
+                check_res = supabase.table("warehouse_list").select("warehouseid").eq("store", store).eq("name", warehouse_name.strip()).execute()
+                if check_res.data:
                     st.error(f"Gudang dengan nama '{warehouse_name}' sudah ada di toko ini.")
                     return
 
