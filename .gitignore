@@ -8,23 +8,41 @@ env/
 venv/
 ENV/
 .venv
+*.egg-info/
+dist/
+build/
+.eggs/
 
 # Environment variables
 .env
+.env.*
 .env.local
+.env.production
+secrets.toml
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-*
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Streamlit
 .streamlit/
 
-#Database
+# Database
 /*.sql
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
